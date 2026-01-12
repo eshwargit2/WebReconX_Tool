@@ -19,7 +19,7 @@ A comprehensive web security analysis tool that performs automated reconnaissanc
 - **Requests** 2.31.0 for HTTP operations
 - **BeautifulSoup4** 4.12.3 for HTML parsing
 - **wafw00f** for WAF detection
-- Custom XSS scanner with payload injection testing
+- **Modular Architecture**: Separate modules for port scanning, WAF detection, technology detection, and XSS scanning
 
 ### Frontend
 - **React 18** with Vite build tool
@@ -161,7 +161,10 @@ Performs comprehensive security analysis on a target URL.
 ```
 .
 ├── backend/
-│   ├── server.py              # Main Flask application
+│   ├── server.py              # Main Flask application & API routes
+│   ├── portscanner.py         # Port scanning module with multi-threading
+│   ├── waf_detector.py        # WAF detection using wafw00f
+│   ├── tech_detector.py       # Technology fingerprinting module
 │   ├── xss_scanner.py         # XSS vulnerability scanner
 │   └── requirements.txt       # Python dependencies
 │
@@ -247,6 +250,20 @@ The developers assume no liability for misuse of this software.
 - XSS scanner may timeout on extremely large or slow websites
 - WAF detection confidence varies based on response patterns
 - Some technologies may not be detected if heavily obfuscated
+
+## 🏗️ Architecture
+
+WebReconX follows a modular architecture for better maintainability and scalability:
+
+### Backend Modules
+
+1. **server.py**: Main Flask application orchestrating all security operations
+2. **portscanner.py**: Multi-threaded port scanning with banner grabbing
+3. **waf_detector.py**: WAF detection using wafw00f with deep analysis
+4. **tech_detector.py**: Technology stack fingerprinting
+5. **xss_scanner.py**: XSS vulnerability testing with optimized payloads
+
+Each module is self-contained and can be tested independently, making the codebase easier to maintain and extend.
 
 ## 🚧 Future Enhancements
 
