@@ -64,7 +64,7 @@ The backend server will start on `http://localhost:5000`
 
 1. Navigate to the frontend directory:
 ```bash
-cd site-guardian-ai-ui
+cd Frontend
 ```
 
 2. Install dependencies:
