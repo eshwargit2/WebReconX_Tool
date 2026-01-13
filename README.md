@@ -1,15 +1,18 @@
 # WebReconX
 ![License](https://img.shields.io/github/license/eshwargit2/WebReconX_Tool) <br>
-A comprehensive web security analysis tool that performs automated reconnaissance and vulnerability scanning on websites. WebReconX provides real-time insights into web technologies, security configurations, and potential vulnerabilities.
+A comprehensive web security analysis tool that performs automated reconnaissance and vulnerability scanning on websites. WebReconX provides real-time insights into web technologies, security configurations, and potential vulnerabilities with selective test execution for optimized scanning.
 
 ## 🚀 Features
 
+- **Selective Test Execution**: Interactive modal allows you to choose which security tests to run (XSS, SQL Injection, Port Scanning, WAF Detection, Technology Detection)
+- **SQL Injection Scanning**: Tests for SQL injection vulnerabilities using 5 optimized payloads targeting basic injection points
+- **XSS Vulnerability Scanning**: Tests for Cross-Site Scripting vulnerabilities using optimized payloads across forms and URL parameters
 - **Technology Detection**: Automatically identifies frontend frameworks (React, Angular, Vue), backend technologies (Django, Node.js, WordPress), CSS frameworks, and server software with version detection
 - **Web Application Firewall (WAF) Detection**: Detects 15+ WAF types including AWS WAF, Cloudflare, Akamai, Imperva, and more with confidence levels
 - **Port Scanning**: Multi-threaded scanning of common ports (21, 22, 80, 443, 3306, etc.) with service version detection
-- **XSS Vulnerability Scanning**: Tests for Cross-Site Scripting vulnerabilities using 10 optimized payloads across forms and URL parameters
+- **Smart Loading Animation**: Dynamic progress indicator showing only the selected tests being executed
 - **Real-time Progress Tracking**: Live updates showing which security operation is currently executing
-- **Comprehensive Dashboard**: Visual representation of scan results with color-coded risk indicators
+- **Comprehensive Dashboard**: Visual representation of scan results with color-coded risk indicators and conditional rendering based on selected tests
 
 ## 🛠️ Tech Stack
 
@@ -19,7 +22,7 @@ A comprehensive web security analysis tool that performs automated reconnaissanc
 - **Requests** 2.31.0 for HTTP operations
 - **BeautifulSoup4** 4.12.3 for HTML parsing
 - **wafw00f** for WAF detection
-- **Modular Architecture**: Separate modules for port scanning, WAF detection, technology detection, and XSS scanning
+- **Modular Architecture**: Separate modules for port scanning, WAF detection, technology detection, XSS scanning, and SQL injection scanning
 
 ### Frontend
 - **React 18** with Vite build tool
@@ -91,32 +94,54 @@ The frontend will start on `http://localhost:5173` (or another available port)
 
 3. Click the **"Analyze Security"** button
 
-4. Watch real-time progress as WebReconX performs:
-   - Hostname resolution
-   - Port scanning
-   - WAF detection
-   - Technology stack identification
-   - XSS vulnerability testing
+4. **Select Your Tests**: A modal will appear allowing you to choose which security tests to run:
+   - ✅ **Port Scanning** - Scan for open ports and services
+   - ✅ **WAF Detection** - Check for Web Application Firewall
+   - ✅ **Technology Detection** - Identify web technologies and frameworks
+   - ✅ **XSS Vulnerability Test** - Test for Cross-Site Scripting attacks
+   - ✅ **SQL Injection Test** - Test for SQL injection vulnerabilities
+   
+   Simply click on any test to toggle it on/off. The scan will only execute the selected tests.
 
-5. View comprehensive results in the dashboard:
-   - Website overview (IP, hostname, open ports)
-   - WAF protection status
-   - Detected technologies by category
-   - XSS vulnerability status with attack details
+5. Click **"Start Scan"** to begin the analysis
+
+6. Watch real-time progress as WebReconX performs only your selected tests:
+   - Hostname resolution
+   - Port scanning (if selected)
+   - WAF detection (if selected)
+   - Technology stack identification (if selected)
+   - XSS vulnerability testing (if selected)
+   - SQL injection testing (if selected)
+
+7. View comprehensive results in the dashboard:
+   - Website overview (IP, hostname, open ports if scanned)
+   - WAF protection status (if scanned)
+   - Detected technologies by category (if scanned)
+   - XSS vulnerability status with attack details (if scanned)
+   - SQL injection vulnerability status with payload details (if scanned)
    - Risk assessment and recommendations
 
 ## 🔌 API Endpoints
 
 ### POST /api/analyze
 
-Performs comprehensive security analysis on a target URL.
+Performs comprehensive security analysis on a target URL with optional selective test execution.
 
 **Request Body:**
 ```json
 {
-  "url": "https://example.com"
+  "url": "https://example.com",
+  "tests": {
+    "xss": true,
+    "sqli": true,
+    "ports": true,
+    "waf": true,
+    "tech": true
+  }
 }
 ```
+
+**Note**: The `tests` parameter is optional. If not provided, all tests will be executed by default.
 
 **Response:**
 ```json
@@ -146,12 +171,47 @@ Performs comprehensive security analysis on a target URL.
       "category": "Frontend Framework"
     }
   ],
-  "xss_vulnerable": true,
-  "xss_details": {
-    "total_tests": 45,
-    "vulnerable_params": ["search", "q"],
-    "vulnerable_forms": 2,
-    "successful_payloads": 3
+  "xss_scan": {
+    "vulnerable": true,
+    "total_vulnerabilities": 3,
+    "vulnerabilities": [...]
+  },
+  "sqli_scan": {
+    "vulnerable": true,
+    "total_vulnerabilities": 2,
+    "vulnerabilities": [...]
+  }
+}
+```
+
+### POST /api/scan-sqli
+
+Performs SQL injection vulnerability scan on a target URL.
+
+**Request Body:**
+```json
+{
+  "url": "https://example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "sqli_scan": {
+    "url": "https://example.com",
+    "vulnerable": true,
+    "total_vulnerabilities": 2,
+    "vulnerabilities": [
+      {
+        "url": "https://example.com?id='",
+        "method": "GET",
+        "parameter": "id",
+        "payload": "'",
+        "evidence": "SQL syntax error detected"
+      }
+    ],
+    "scan_time": "2.34s"
   }
 }
 ```
@@ -166,23 +226,26 @@ Performs comprehensive security analysis on a target URL.
 │   ├── waf_detector.py        # WAF detection using wafw00f
 │   ├── tech_detector.py       # Technology fingerprinting module
 │   ├── xss_scanner.py         # XSS vulnerability scanner
+│   ├── sqli_scanner.py        # SQL injection vulnerability scanner
 │   └── requirements.txt       # Python dependencies
 │
-├── site-guardian-ai-ui/
+├── Frontend/
 │   ├── src/
 │   │   ├── App.jsx           # Main application component
 │   │   ├── components/
-│   │   │   ├── Dashboard.jsx           # Main dashboard layout
-│   │   │   ├── Header.jsx              # Navigation header
-│   │   │   ├── SearchSection.jsx       # URL input and analyze button
-│   │   │   ├── LoadingSection.jsx      # Real-time progress display
-│   │   │   ├── WebsiteOverview.jsx     # Basic site info display
-│   │   │   ├── TechnologyStack.jsx     # Detected technologies
-│   │   │   ├── RiskAssessment.jsx      # Security risk summary
-│   │   │   ├── IssuesRecommendations.jsx
-│   │   │   └── XSSVulnerability.jsx    # XSS scan results
+│   │   │   ├── Dashboard.jsx              # Main dashboard layout
+│   │   │   ├── Header.jsx                 # Navigation header
+│   │   │   ├── SearchSection.jsx          # URL input and analyze button
+│   │   │   ├── LoadingSection.jsx         # Dynamic progress display
+│   │   │   ├── ScanOptionsModal.jsx       # Test selection modal
+│   │   │   ├── WebsiteOverview.jsx        # Basic site info display
+│   │   │   ├── TechnologyStack.jsx        # Detected technologies
+│   │   │   ├── RiskAssessment.jsx         # Security risk summary
+│   │   │   ├── IssuesRecommendations.jsx  # Security recommendations
+│   │   │   ├── XSSVulnerability.jsx       # XSS scan results
+│   │   │   └── SQLInjection.jsx           # SQL injection scan results
 │   │   └── services/
-│   │       └── api.js                  # API client
+│   │       └── api.js                     # API client
 │   ├── package.json
 │   └── vite.config.js
 │
@@ -210,20 +273,31 @@ Detects major Web Application Firewalls:
 
 ### XSS Scanning
 Tests for XSS vulnerabilities using:
-- 10 optimized injection payloads
+- Optimized injection payloads
 - Form-based testing
 - URL parameter testing
 - GET and POST method support
 - Timeout protection (3s per request)
 - Smart payload limiting for performance
 
+### SQL Injection Scanning
+Tests for SQL injection vulnerabilities using:
+- 5 basic SQL injection payloads targeting common vulnerabilities
+- GET and POST method support
+- Parameter-based testing
+- Form input testing
+- Error-based detection
+- Optimized for speed and accuracy
+
 ## ⚠️ Performance Optimizations
 
-- **Multi-threaded port scanning** for faster results
-- **Request timeouts** (3s per request) to prevent hangs
-- **Payload limiting** (max 5 per parameter) for efficiency
-- **Form limiting** (max 3 forms with 5 inputs each)
-- **Total timeout** of 60 seconds for comprehensive scans
+- **Selective Test Execution**: Run only the security tests you need, saving time and resources
+- **Smart Loading Animation**: Shows progress only for selected tests
+- **Optimized SQL Injection Payloads**: Reduced to 5 most effective payloads for faster scanning
+- **Multi-threaded Port Scanning**: Parallel execution for faster results
+- **Request Timeouts**: 3s per request to prevent hangs
+- **Conditional Rendering**: Frontend displays only the results of executed tests
+- **Modular Backend**: Tests are skipped entirely when not selected, reducing server load
 
 ## 🎯 Use Cases
 
@@ -250,6 +324,7 @@ The developers assume no liability for misuse of this software.
 - XSS scanner may timeout on extremely large or slow websites
 - WAF detection confidence varies based on response patterns
 - Some technologies may not be detected if heavily obfuscated
+- SQL injection tests use basic payloads and may not detect advanced protection mechanisms
 
 ## 🏗️ Architecture
 
@@ -257,17 +332,19 @@ WebReconX follows a modular architecture for better maintainability and scalabil
 
 ### Backend Modules
 
-1. **server.py**: Main Flask application orchestrating all security operations
+1. **server.py**: Main Flask application orchestrating all security operations with selective test execution
 2. **portscanner.py**: Multi-threaded port scanning with banner grabbing
 3. **waf_detector.py**: WAF detection using wafw00f with deep analysis
 4. **tech_detector.py**: Technology stack fingerprinting
 5. **xss_scanner.py**: XSS vulnerability testing with optimized payloads
+6. **sqli_scanner.py**: SQL injection vulnerability testing with 5 basic payloads
 
 Each module is self-contained and can be tested independently, making the codebase easier to maintain and extend.
 
 ## 🚧 Future Enhancements
 
-- SQL injection vulnerability testing
+- ~~SQL injection vulnerability testing~~ ✅ **Completed**
+- Advanced SQL injection techniques (Union-based, Time-based, Boolean-based)
 - SSL/TLS configuration analysis
 - CORS misconfiguration detection
 - Subdomain enumeration
@@ -275,6 +352,7 @@ Each module is self-contained and can be tested independently, making the codeba
 - Report export (PDF/JSON)
 - Historical scan comparison
 - Scheduled automated scans
+- API rate limiting and authentication
 
 ## 📝 License
 
