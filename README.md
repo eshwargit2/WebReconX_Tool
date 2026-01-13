@@ -1,5 +1,5 @@
 # WebReconX
-![License](https://img.shields.io/github/license/eshwargit2/WebReconX_Tool)
+![License](https://img.shields.io/github/license/eshwargit2/WebReconX_Tool) <br>
 A comprehensive web security analysis tool that performs automated reconnaissance and vulnerability scanning on websites. WebReconX provides real-time insights into web technologies, security configurations, and potential vulnerabilities.
 
 ## 🚀 Features
