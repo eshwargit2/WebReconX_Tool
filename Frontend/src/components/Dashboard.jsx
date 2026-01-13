@@ -4,13 +4,17 @@ import TechnologyStack from "./TechnologyStack"
 import IssuesRecommendations from "./IssuesRecommendations"
 import { FileDown } from "lucide-react"
 
-export default function Dashboard({ data }) {
+export default function Dashboard({ data, selectedTests }) {
+  const showTech = selectedTests?.tech !== false;
+  const showPorts = selectedTests?.ports !== false;
+  const showWAF = selectedTests?.waf !== false;
+
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <WebsiteOverview data={data} />
+        <WebsiteOverview data={data} selectedTests={selectedTests} />
         <div className="lg:col-span-2 space-y-8">
-          <TechnologyStack data={data} />
+          {showTech && <TechnologyStack data={data} />}
           <RiskAssessment data={data} />
         </div>
       </div>

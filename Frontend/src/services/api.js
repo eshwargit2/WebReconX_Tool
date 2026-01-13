@@ -18,6 +18,7 @@ export const apiEndpoints = {
   health: '/api/health',
   analyzeWebsite: '/api/analyze',
   scanXSS: '/api/scan-xss',
+  scanSQLi: '/api/scan-sqli',
 };
 
 // API functions
@@ -31,9 +32,13 @@ export const checkHealth = async () => {
   }
 };
 
-export const analyzeWebsite = async (url) => {
+export const analyzeWebsite = async (url, selectedTests = null) => {
   try {
-    const response = await api.post(apiEndpoints.analyzeWebsite, { url });
+    const payload = { url };
+    if (selectedTests) {
+      payload.tests = selectedTests;
+    }
+    const response = await api.post(apiEndpoints.analyzeWebsite, payload);
     return response.data;
   } catch (error) {
     console.error('Website analysis failed:', error);
@@ -47,6 +52,16 @@ export const scanXSSVulnerability = async (url) => {
     return response.data;
   } catch (error) {
     console.error('XSS scan failed:', error);
+    throw error;
+  }
+};
+
+export const scanSQLInjection = async (url, param = null, method = 'GET') => {
+  try {
+    const response = await api.post(apiEndpoints.scanSQLi, { url, param, method });
+    return response.data;
+  } catch (error) {
+    console.error('SQL injection scan failed:', error);
     throw error;
   }
 };

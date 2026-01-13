@@ -48,6 +48,10 @@ class XSSScanner:
     def extract_forms(self, url):
         """Extract all forms from a webpage"""
         try:
+            # Ensure URL has proper protocol
+            if not url.startswith(('http://', 'https://')):
+                url = 'http://' + url
+            
             response = self.session.get(url, timeout=5, verify=False)
             soup = BeautifulSoup(response.text, 'html.parser')
             forms = []
@@ -216,8 +220,16 @@ class XSSScanner:
                 
                 time.sleep(0.05)  # Reduced rate limiting
                 
+            except requests.exceptions.Timeout:
+                print(f"[XSS] Timeout testing {param}")
+                continue
+            except requests.exceptions.ConnectionError:
+                print(f"[XSS] Connection error for {param}")
+                continue
             except Exception as e:
-                print(f"[XSS] Error testing {param}: {str(e)[:50]}")
+                # Only print first occurrence to avoid spam
+                if tested_payloads == 1:
+                    print(f"[XSS] Error testing {param}: {type(e).__name__}")
                 continue
         
         return vulnerabilities

@@ -8,6 +8,7 @@ from portscanner import scan_ports
 from waf_detector import detect_waf
 from tech_detector import detect_technologies
 from xss_scanner import scan_xss
+from sqli_scanner import SQLiScanner
 
 app = Flask(__name__)
 CORS(app)
@@ -24,10 +25,17 @@ def welcome():
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze_website():
-    """Analyze website endpoint"""
+    """Analyze website endpoint with selective test execution"""
     try:
         data = request.get_json()
         url = data.get('url')
+        selected_tests = data.get('tests', {
+            'ports': True,
+            'waf': True,
+            'tech': True,
+            'xss': True,
+            'sqli': False  # SQL injection handled separately
+        })
         
         if not url:
             return jsonify({
@@ -48,28 +56,51 @@ def analyze_website():
             }), 400
         
         print(f"Scanning {url} ({ip_address})...")
+        print(f"Selected tests: {selected_tests}")
         
-        # Scan ports
-        open_ports = scan_ports(ip_address)
+        # Initialize results
+        open_ports = []
+        technologies = {}
+        waf_info = {'detected': False}
+        xss_results = {}
         
-        print(f"Found {len(open_ports)} open ports")
-        for port_info in open_ports:
-            print(f"  Port {port_info['port']}: {port_info['service']}")
+        # Scan ports (if selected)
+        if selected_tests.get('ports', True):
+            print(f"[*] Scanning ports...")
+            open_ports = scan_ports(ip_address)
+            print(f"Found {len(open_ports)} open ports")
+            for port_info in open_ports:
+                print(f"  Port {port_info['port']}: {port_info['service']}")
+        else:
+            print("[*] Port scanning skipped")
         
-        # Detect technologies
-        print(f"Detecting technologies for {url}...")
-        technologies = detect_technologies(url)
+        # Detect technologies (if selected)
+        if selected_tests.get('tech', True):
+            print(f"[*] Detecting technologies for {url}...")
+            technologies = detect_technologies(url)
+        else:
+            print("[*] Technology detection skipped")
         
-        # Detect WAF
-        print(f"Detecting WAF for {url}...")
-        waf_info = detect_waf(url)
+        # Detect WAF (if selected)
+        if selected_tests.get('waf', True):
+            print(f"[*] Detecting WAF for {url}...")
+            waf_info = detect_waf(url)
+        else:
+            print("[*] WAF detection skipped")
         
-        # Scan for XSS vulnerabilities
-        print(f"Scanning for XSS vulnerabilities on {url}...")
-        
-        # Test URL for XSS
-        test_url = f"https://{url}" if not url.startswith(('http://', 'https://')) else url
-        xss_results = scan_xss(test_url)
+        # Scan for XSS vulnerabilities (if selected)
+        if selected_tests.get('xss', True):
+            print(f"[*] Scanning for XSS vulnerabilities on {url}...")
+            
+            # Test URL for XSS - try HTTP first, then HTTPS
+            if not url.startswith(('http://', 'https://')):
+                test_url = f"http://{url}"  # Default to HTTP instead of HTTPS
+            else:
+                test_url = url
+            xss_results = scan_xss(test_url)
+        else:
+            print("[*] XSS scanning skipped")
+            xss_results = {'total_vulnerabilities': 0, 'tested_payloads': 0}
         
         # Get hostname
         try:
@@ -155,6 +186,45 @@ def scan_xss_vulnerability():
         
     except Exception as e:
         print(f"Error in XSS scan: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+
+@app.route('/api/scan-sqli', methods=['POST'])
+def scan_sql_injection():
+    """Scan website for SQL injection vulnerabilities"""
+    try:
+        data = request.get_json()
+        url = data.get('url', '')
+        param_name = data.get('param', None)
+        method = data.get('method', 'GET').upper()
+        
+        if not url:
+            return jsonify({
+                'status': 'error',
+                'message': 'URL is required'
+            }), 400
+        
+        print(f"[SQLi] Starting SQL injection scan for: {url}")
+        print(f"[SQLi] Parameter: {param_name or 'Auto-detect'}")
+        print(f"[SQLi] Method: {method}")
+        
+        # Initialize SQL injection scanner
+        scanner = SQLiScanner()
+        
+        # Run SQL injection scan
+        sqli_report = scanner.scan_for_api(url, param_name, method)
+        
+        return jsonify({
+            'status': 'success',
+            'sqli_scan': sqli_report,
+            'message': f'SQL injection scan completed for {url}'
+        }), 200
+        
+    except Exception as e:
+        print(f"Error in SQL injection scan: {str(e)}")
         return jsonify({
             'status': 'error',
             'message': str(e)

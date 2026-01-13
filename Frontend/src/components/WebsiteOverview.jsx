@@ -1,7 +1,7 @@
 import { Globe, Server, Code, Database, Zap, Lock, Shield, Network } from "lucide-react"
 import { useState } from "react"
 
-export default function WebsiteOverview({ data }) {
+export default function WebsiteOverview({ data, selectedTests }) {
   const [copiedIndex, setCopiedIndex] = useState(null)
 
   const handleCopy = (value, index) => {
@@ -19,14 +19,17 @@ export default function WebsiteOverview({ data }) {
     )
   }
 
+  const showPorts = selectedTests?.ports !== false;
+  const showWAF = selectedTests?.waf !== false;
+
   const overviewItems = [
-    { icon: Globe, label: "Website URL", value: data.url || "N/A" },
-    { icon: Server, label: "IP Address", value: data.ip_address || "N/A" },
-    { icon: Network, label: "Hostname", value: data.hostname || data.url || "N/A" },
-    { icon: Shield, label: "Open Ports", value: data.total_open_ports?.toString() || "0" },
-    { icon: Lock, label: "WAF Protection", value: data.waf?.name || "None detected" },
-    { icon: Zap, label: "Scan Date", value: data.scan_date || "N/A" },
-  ]
+    { icon: Globe, label: "Website URL", value: data.url || "N/A", show: true },
+    { icon: Server, label: "IP Address", value: data.ip_address || "N/A", show: true },
+    { icon: Network, label: "Hostname", value: data.hostname || data.url || "N/A", show: true },
+    { icon: Shield, label: "Open Ports", value: data.total_open_ports?.toString() || "0", show: showPorts },
+    { icon: Lock, label: "WAF Protection", value: data.waf?.name || "None detected", show: showWAF },
+    { icon: Zap, label: "Scan Date", value: data.scan_date || "N/A", show: true },
+  ].filter(item => item.show !== false)
 
   return (
     <div className="rounded-lg bg-slate-800/50 border border-slate-700/50 p-6 backdrop-blur">
@@ -63,7 +66,7 @@ export default function WebsiteOverview({ data }) {
       </div>
 
       {/* WAF Information */}
-      {data.waf && (
+      {showWAF && data.waf && (
         <div className="mt-6 pt-6 border-t border-slate-700/50">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Shield size={20} className="text-cyan-400" />
@@ -119,7 +122,7 @@ export default function WebsiteOverview({ data }) {
       )}
 
       {/* Open Ports Details */}
-      {data.open_ports && data.open_ports.length > 0 && (
+      {showPorts && data.open_ports && data.open_ports.length > 0 && (
         <div className="mt-6 pt-6 border-t border-slate-700/50">
           <h3 className="text-lg font-semibold text-white mb-4">Open Ports Details</h3>
           <div className="space-y-3 max-h-96 overflow-y-auto">
