@@ -9,7 +9,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 120000, // 120 seconds timeout for thorough scanning
+  timeout: 300000, // 300 seconds timeout for thorough scanning with AI analysis
 });
 
 // API endpoints
@@ -32,11 +32,16 @@ export const checkHealth = async () => {
   }
 };
 
-export const analyzeWebsite = async (url, selectedTests = null) => {
+export const analyzeWebsite = async (url, selectedTests = null, geminiApiKey = null) => {
   try {
     const payload = { url };
     if (selectedTests) {
       payload.tests = selectedTests;
+    }
+    // Add Gemini API key if provided (from localStorage or parameter)
+    const apiKey = geminiApiKey || localStorage.getItem('gemini_api_key');
+    if (apiKey) {
+      payload.gemini_api_key = apiKey;
     }
     const response = await api.post(apiEndpoints.analyzeWebsite, payload);
     return response.data;

@@ -2,6 +2,11 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import socket
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Import security scanning modules
 from portscanner import scan_ports
@@ -10,6 +15,7 @@ from tech_detector import detect_technologies
 from xss_scanner import scan_xss
 from sqli_scanner import SQLiScanner
 from whois_lookup import perform_whois_lookup
+from ai_analyzer import AIAnalyzer
 
 app = Flask(__name__)
 CORS(app)
@@ -65,6 +71,7 @@ def analyze_website():
         technologies = {}
         waf_info = {'detected': False}
         xss_results = {}
+        sqli_results = {}
         whois_info = {}
         
         # WHOIS Lookup (if selected)
@@ -144,6 +151,7 @@ def analyze_website():
             'waf': waf_info,
             'whois': whois_info,
             'xss_scan': xss_results,
+            'sqli_scan': sqli_results,  # Include SQL injection results
             'scan_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'message': f'Analysis completed for {url}',
             'data': {
@@ -152,6 +160,31 @@ def analyze_website():
                 'scan_date': datetime.now().strftime('%Y-%m-%d')
             }
         }
+        
+        # Generate AI analysis (if selected)
+        gemini_api_key = data.get('gemini_api_key') or os.getenv('GEMINI_API_KEY')
+        if selected_tests.get('ai_analysis', True) and gemini_api_key:
+            print(f"[*] Generating AI security analysis...")
+            try:
+                ai_analyzer = AIAnalyzer(api_key=gemini_api_key)
+                ai_analysis = ai_analyzer.analyze_security_results(analysis_result)
+                if ai_analysis:
+                    analysis_result['ai_analysis'] = ai_analysis
+                    print("[*] AI analysis completed")
+                else:
+                    print("[!] AI analysis failed, using fallback")
+                    ai_analyzer_fallback = AIAnalyzer(api_key=None)
+                    analysis_result['ai_analysis'] = ai_analyzer_fallback.analyze_security_results(analysis_result)
+            except Exception as ai_error:
+                print(f"[!] AI analysis error: {ai_error}")
+                # Use fallback analysis
+                ai_analyzer_fallback = AIAnalyzer(api_key=None)
+                analysis_result['ai_analysis'] = ai_analyzer_fallback.analyze_security_results(analysis_result)
+        else:
+            print("[*] AI analysis skipped or no API key provided")
+            # Always provide fallback analysis
+            ai_analyzer_fallback = AIAnalyzer(api_key=None)
+            analysis_result['ai_analysis'] = ai_analyzer_fallback.analyze_security_results(analysis_result)
         
         return jsonify(analysis_result), 200
         

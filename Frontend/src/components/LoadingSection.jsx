@@ -4,13 +4,14 @@ export default function LoadingSection({ isLoading, currentOperation = "Initiali
   if (!isLoading) return null
 
   const allScanSteps = [
-    { icon: Globe, label: "Resolving hostname", id: 'hostname', weight: 10, testKey: null },
-    { icon: FileText, label: "Performing Domain lookup", id: 'whois', weight: 10, testKey: 'whois' },
-    { icon: Search, label: "Scanning open ports", id: 'ports', weight: 25, testKey: 'ports' },
-    { icon: Shield, label: "Detecting WAF protection", id: 'waf', weight: 15, testKey: 'waf' },
-    { icon: Lock, label: "Detecting technologies", id: 'tech', weight: 15, testKey: 'tech' },
-    { icon: Bug, label: "Testing XSS vulnerabilities", id: 'xss', weight: 20, testKey: 'xss' },
-    { icon: Database, label: "Testing SQL injection", id: 'sqli', weight: 15, testKey: 'sqli' },
+    { icon: Globe, label: "Resolving hostname", id: 'hostname', weight: 8, testKey: null },
+    { icon: FileText, label: "Performing Domain lookup", id: 'whois', weight: 8, testKey: 'whois' },
+    { icon: Search, label: "Scanning open ports", id: 'ports', weight: 20, testKey: 'ports' },
+    { icon: Shield, label: "Detecting WAF protection", id: 'waf', weight: 12, testKey: 'waf' },
+    { icon: Lock, label: "Detecting technologies", id: 'tech', weight: 12, testKey: 'tech' },
+    { icon: Bug, label: "Testing XSS vulnerabilities", id: 'xss', weight: 15, testKey: 'xss' },
+    { icon: Database, label: "Testing SQL injection", id: 'sqli', weight: 12, testKey: 'sqli' },
+    { icon: Shield, label: "Generating AI security analysis", id: 'ai', weight: 13, testKey: 'ai_analysis' },
   ]
 
   // Filter steps based on selected tests

@@ -8,7 +8,8 @@ const ScanOptionsModal = ({ isOpen, onClose, onConfirm, url }) => {
     ports: true,
     waf: true,
     tech: true,
-    whois: true
+    whois: true,
+    ai_analysis: true  // Enable AI analysis by default
   });
 
   if (!isOpen) return null;

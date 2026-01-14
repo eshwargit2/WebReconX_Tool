@@ -60,7 +60,12 @@ function App() {
         await new Promise(resolve => setTimeout(resolve, 300))
       }
       
-      // Pass selected tests to backend
+      // Show AI analysis operation before backend call
+      if (selectedTestsFromModal.ai_analysis !== false) {
+        setCurrentOperation('Generating AI security analysis')
+      }
+      
+      // Pass selected tests to backend - AI analysis happens after all scans
       const data = await analyzeWebsite(url, selectedTestsFromModal)
       
       // Run XSS scan if selected (already handled by backend)
