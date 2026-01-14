@@ -9,7 +9,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 60000, // 60 seconds timeout for thorough scanning
+  timeout: 120000, // 120 seconds timeout for thorough scanning
 });
 
 // API endpoints

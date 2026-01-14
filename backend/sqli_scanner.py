@@ -11,6 +11,8 @@ class SQLiScanner:
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         })
+        # Set default timeout for all requests in this session
+        self.timeout = 5
         
         # SQL injection payloads for different types of attacks
         self.payloads = {
@@ -141,18 +143,18 @@ class SQLiScanner:
         # Get baseline response
         try:
             print("[*] Getting baseline response...")
-            baseline_response = self.session.get(url, timeout=10)
+            baseline_response = self.session.get(url, timeout=3)
         except requests.exceptions.RequestException as e:
             print(f"[!] Error getting baseline response: {e}")
             return []
         
-        # If URL has parameters, test those first
+        # If URL has parameters, test those first (limit to 3 params max)
         if existing_params and not param_name:
-            test_params = list(existing_params.keys())
+            test_params = list(existing_params.keys())[:3]
             print(f"[*] Found parameters in URL: {', '.join(test_params)}")
-        # If no specific parameter provided, try common parameter names
+        # If no specific parameter provided, try common parameter names (limit to 3)
         elif not param_name:
-            test_params = ['id', 'user', 'username', 'name', 'search', 'q', 'query', 'page', 'category', 'item']
+            test_params = ['id', 'user', 'search']
             print("[*] No parameter specified. Testing common parameter names...")
         else:
             test_params = [param_name]
@@ -207,13 +209,14 @@ class SQLiScanner:
         # Get baseline response
         try:
             print("[*] Getting baseline POST response...")
-            baseline_response = self.session.post(url, data={}, timeout=10)
+            baseline_response = self.session.post(url, data={}, timeout=3)
         except requests.exceptions.RequestException as e:
             print(f"[!] Error getting baseline response: {e}")
             return []
         
         if not param_name:
-            test_params = ['id', 'user', 'username', 'password', 'name', 'search', 'comment', 'message', 'email']
+            # Limit to 3 most common POST parameters for faster scanning
+            test_params = ['id', 'user', 'search']
         else:
             test_params = [param_name]
         
@@ -230,7 +233,7 @@ class SQLiScanner:
                     print(f"[*] Testing payload {i}/{len(payloads)}: {payload[:50]}...")
                     
                     # Send POST request with payload
-                    response = self.session.post(url, data={param: payload}, timeout=15)
+                    response = self.session.post(url, data={param: payload}, timeout=5)
                     
                     # Detect vulnerability
                     vuln_info = self.detect_sqli_vulnerability(baseline_response, response, payload, param, url)
