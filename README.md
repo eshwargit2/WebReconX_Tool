@@ -1,16 +1,18 @@
 # WebReconX
 ![License](https://img.shields.io/github/license/eshwargit2/WebReconX_Tool)  <br>
-A comprehensive web security analysis tool that performs automated reconnaissance and vulnerability scanning on websites. WebReconX provides real-time insights into web technologies, security configurations, and potential vulnerabilities with selective test execution for optimized scanning.
+A comprehensive web security analysis tool that performs automated reconnaissance and vulnerability scanning on websites. WebReconX provides real-time insights into web technologies, security configurations, and potential vulnerabilities with AI-powered security recommendations and selective test execution for optimized scanning.
 
 ## 🚀 Features
 
-- **Selective Test Execution**: Interactive modal allows you to choose which security tests to run (XSS, SQL Injection, Port Scanning, WAF Detection, Technology Detection)
+- **AI-Powered Security Analysis**: Uses Google Gemini AI to generate contextual security recommendations based on detected vulnerabilities, open ports with versions, and technology stack
+- **Selective Test Execution**: Interactive modal allows you to choose which security tests to run (XSS, SQL Injection, Port Scanning, WAF Detection, Technology Detection, WHOIS Lookup, AI Analysis)
 - **SQL Injection Scanning**: Tests for SQL injection vulnerabilities using 5 optimized payloads targeting basic injection points
 - **XSS Vulnerability Scanning**: Tests for Cross-Site Scripting vulnerabilities using optimized payloads across forms and URL parameters
 - **Technology Detection**: Automatically identifies frontend frameworks (React, Angular, Vue), backend technologies (Django, Node.js, WordPress), CSS frameworks, and server software with version detection
 - **Web Application Firewall (WAF) Detection**: Detects 15+ WAF types including AWS WAF, Cloudflare, Akamai, Imperva, and more with confidence levels
 - **Port Scanning**: Multi-threaded scanning of common ports (21, 22, 80, 443, 3306, etc.) with service version detection
-- **Smart Loading Animation**: Dynamic progress indicator showing only the selected tests being executed
+- **WHOIS Lookup**: Retrieves domain registration information including registrar, creation date, expiration date, and nameservers
+- **Smart Loading Animation**: Dynamic progress indicator showing only the selected tests being executed, including AI analysis progress
 - **Real-time Progress Tracking**: Live updates showing which security operation is currently executing
 - **Comprehensive Dashboard**: Visual representation of scan results with color-coded risk indicators and conditional rendering based on selected tests
 
@@ -22,7 +24,10 @@ A comprehensive web security analysis tool that performs automated reconnaissanc
 - **Requests** 2.31.0 for HTTP operations
 - **BeautifulSoup4** 4.12.3 for HTML parsing
 - **wafw00f** for WAF detection
-- **Modular Architecture**: Separate modules for port scanning, WAF detection, technology detection, XSS scanning, and SQL injection scanning
+- **python-whois** for domain registration lookups
+- **python-dotenv** for environment variable management
+- **Google Generative AI (Gemini)** for AI-powered security analysis
+- **Modular Architecture**: Separate modules for port scanning, WAF detection, technology detection, XSS scanning, SQL injection scanning, WHOIS lookup, and AI analysis
 
 ### Frontend
 - **React 18** with Vite build tool
@@ -36,6 +41,7 @@ A comprehensive web security analysis tool that performs automated reconnaissanc
 - Node.js 16 or higher
 - npm or pnpm package manager
 - wafw00f (for WAF detection)
+- Google Gemini API key (for AI-powered analysis)
 
 ## 🔧 Installation
 
@@ -43,7 +49,7 @@ A comprehensive web security analysis tool that performs automated reconnaissanc
 
 1. Navigate to the backend directory:
 ```bash
-cd backend
+cd Backend
 ```
 
 2. Install Python dependencies:
@@ -56,7 +62,19 @@ pip install -r requirements.txt
 pip install wafw00f
 ```
 
-4. Start the Flask server:
+4. Create a `.env` file in the Backend directory with your API keys:
+```env
+# Gemini API Configuration
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Server Configuration
+FLASK_ENV=development
+FLASK_DEBUG=True
+PORT=5000
+BACKEND_URL=http://localhost:5000
+```
+
+5. Start the Flask server:
 ```bash
 python server.py
 ```
@@ -100,6 +118,8 @@ The frontend will start on `http://localhost:5173` (or another available port)
    - ✅ **Technology Detection** - Identify web technologies and frameworks
    - ✅ **XSS Vulnerability Test** - Test for Cross-Site Scripting attacks
    - ✅ **SQL Injection Test** - Test for SQL injection vulnerabilities
+   - ✅ **WHOIS Lookup** - Get domain registration information
+   - ✅ **AI Analysis** - Generate AI-powered security recommendations (requires Gemini API key)
    
    Simply click on any test to toggle it on/off. The scan will only execute the selected tests.
 
@@ -112,6 +132,8 @@ The frontend will start on `http://localhost:5173` (or another available port)
    - Technology stack identification (if selected)
    - XSS vulnerability testing (if selected)
    - SQL injection testing (if selected)
+   - WHOIS lookup (if selected)
+   - AI-powered analysis (if selected - runs after all scans complete)
 
 7. View comprehensive results in the dashboard:
    - Website overview (IP, hostname, open ports if scanned)
@@ -119,7 +141,8 @@ The frontend will start on `http://localhost:5173` (or another available port)
    - Detected technologies by category (if scanned)
    - XSS vulnerability status with attack details (if scanned)
    - SQL injection vulnerability status with payload details (if scanned)
-   - Risk assessment and recommendations
+   - WHOIS information (if scanned)
+   - AI-generated risk assessment and recommendations (if AI analysis selected)
 
 ## 🔌 API Endpoints
 
@@ -136,7 +159,9 @@ Performs comprehensive security analysis on a target URL with optional selective
     "sqli": true,
     "ports": true,
     "waf": true,
-    "tech": true
+    "tech": true,
+    "whois": true,
+    "ai_analysis": true
   }
 }
 ```
@@ -180,6 +205,18 @@ Performs comprehensive security analysis on a target URL with optional selective
     "vulnerable": true,
     "total_vulnerabilities": 2,
     "vulnerabilities": [...]
+  },
+  "whois": {
+    "domain_name": "example.com",
+    "registrar": "Example Registrar Inc.",
+    "creation_date": "1995-08-14",
+    "expiration_date": "2026-08-13",
+    "nameservers": ["ns1.example.com", "ns2.example.com"]
+  },
+  "ai_analysis": {
+    "risk_level": "HIGH",
+    "vulnerabilities": [...],
+    "recommendations": [...]
   }
 }
 ```
@@ -220,14 +257,17 @@ Performs SQL injection vulnerability scan on a target URL.
 
 ```
 .
-├── backend/
+├── Backend/
 │   ├── server.py              # Main Flask application & API routes
 │   ├── portscanner.py         # Port scanning module with multi-threading
 │   ├── waf_detector.py        # WAF detection using wafw00f
 │   ├── tech_detector.py       # Technology fingerprinting module
 │   ├── xss_scanner.py         # XSS vulnerability scanner
 │   ├── sqli_scanner.py        # SQL injection vulnerability scanner
-│   └── requirements.txt       # Python dependencies
+│   ├── whois_lookup.py        # WHOIS domain information retrieval
+│   ├── ai_analyzer.py         # AI-powered security analysis using Gemini
+│   ├── requirements.txt       # Python dependencies
+│   └── .env                   # Environment variables (API keys)
 │
 ├── Frontend/
 │   ├── src/
@@ -239,6 +279,7 @@ Performs SQL injection vulnerability scan on a target URL.
 │   │   │   ├── LoadingSection.jsx         # Dynamic progress display
 │   │   │   ├── ScanOptionsModal.jsx       # Test selection modal
 │   │   │   ├── WebsiteOverview.jsx        # Basic site info display
+│   │   │   ├── WhoisInfo.jsx              # WHOIS information display
 │   │   │   ├── TechnologyStack.jsx        # Detected technologies
 │   │   │   ├── RiskAssessment.jsx         # Security risk summary
 │   │   │   ├── IssuesRecommendations.jsx  # Security recommendations
@@ -292,12 +333,15 @@ Tests for SQL injection vulnerabilities using:
 ## ⚠️ Performance Optimizations
 
 - **Selective Test Execution**: Run only the security tests you need, saving time and resources
-- **Smart Loading Animation**: Shows progress only for selected tests
+- **Smart Loading Animation**: Shows progress only for selected tests, including AI analysis phase
 - **Optimized SQL Injection Payloads**: Reduced to 5 most effective payloads for faster scanning
 - **Multi-threaded Port Scanning**: Parallel execution for faster results
-- **Request Timeouts**: 3s per request to prevent hangs
+- **Request Timeouts**: 3s per request to prevent hangs; 180s for AI analysis
 - **Conditional Rendering**: Frontend displays only the results of executed tests
 - **Modular Backend**: Tests are skipped entirely when not selected, reducing server load
+- **AI Analysis on Demand**: AI recommendations only generated when enabled, runs after all scans complete
+- **Increased Timeout Handling**: Frontend timeout increased to 300s to accommodate AI analysis
+- **Efficient Token Management**: AI prompt optimized to stay within token limits while providing comprehensive analysis
 
 ## 🎯 Use Cases
 
@@ -338,12 +382,26 @@ WebReconX follows a modular architecture for better maintainability and scalabil
 4. **tech_detector.py**: Technology stack fingerprinting
 5. **xss_scanner.py**: XSS vulnerability testing with optimized payloads
 6. **sqli_scanner.py**: SQL injection vulnerability testing with 5 basic payloads
+7. **whois_lookup.py**: Domain registration information retrieval
+8. **ai_analyzer.py**: AI-powered security analysis using Google Gemini - generates contextual recommendations based on actual scan results (open ports with versions, detected technologies, XSS/SQLi findings, WAF status)
 
 Each module is self-contained and can be tested independently, making the codebase easier to maintain and extend.
+
+### AI Analysis Features
+
+The AI analyzer uses Google Gemini to provide:
+- **Context-aware recommendations**: Based on specific vulnerabilities found, not generic advice
+- **Version-specific guidance**: Considers detected software versions when suggesting fixes
+- **Prioritized action items**: Focuses on the most critical issues first
+- **Technology-specific advice**: Tailored to the detected tech stack (React, Node.js, etc.)
+- **Attack scenario analysis**: Explains potential attack vectors based on findings
+- **Smart timeout handling**: 180-second timeout with fallback to rule-based analysis if AI is unavailable
 
 ## 🚧 Future Enhancements
 
 - ~~SQL injection vulnerability testing~~ ✅ **Completed**
+- ~~AI-powered security recommendations~~ ✅ **Completed**
+- ~~WHOIS domain information lookup~~ ✅ **Completed**
 - Advanced SQL injection techniques (Union-based, Time-based, Boolean-based)
 - SSL/TLS configuration analysis
 - CORS misconfiguration detection
@@ -353,6 +411,8 @@ Each module is self-contained and can be tested independently, making the codeba
 - Historical scan comparison
 - Scheduled automated scans
 - API rate limiting and authentication
+- Enhanced AI analysis with custom security policies
+- Multi-language support for AI recommendations
 
 ## 📝 License
 
