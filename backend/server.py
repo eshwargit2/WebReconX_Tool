@@ -9,6 +9,7 @@ from waf_detector import detect_waf
 from tech_detector import detect_technologies
 from xss_scanner import scan_xss
 from sqli_scanner import SQLiScanner
+from whois_lookup import perform_whois_lookup
 
 app = Flask(__name__)
 CORS(app)
@@ -34,7 +35,8 @@ def analyze_website():
             'waf': True,
             'tech': True,
             'xss': True,
-            'sqli': False  # SQL injection handled separately
+            'sqli': False,  # SQL injection handled separately
+            'whois': True
         })
         
         if not url:
@@ -63,6 +65,14 @@ def analyze_website():
         technologies = {}
         waf_info = {'detected': False}
         xss_results = {}
+        whois_info = {}
+        
+        # WHOIS Lookup (if selected)
+        if selected_tests.get('whois', True):
+            print(f"[*] Performing WHOIS lookup for {url}...")
+            whois_info = perform_whois_lookup(url)
+        else:
+            print("[*] WHOIS lookup skipped")
         
         # Scan ports (if selected)
         if selected_tests.get('ports', True):
@@ -132,6 +142,7 @@ def analyze_website():
             'total_open_ports': len(open_ports),
             'technologies': technologies,
             'waf': waf_info,
+            'whois': whois_info,
             'xss_scan': xss_results,
             'scan_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'message': f'Analysis completed for {url}',

@@ -9,6 +9,7 @@ import XSSVulnerability from "./components/XSSVulnerability"
 import SQLInjection from "./components/SQLInjection"
 import SQLInjectionTester from "./components/SQLInjectionTester"
 import ScanOptionsModal from "./components/ScanOptionsModal"
+import WhoisInfo from "./components/WhoisInfo"
 import { analyzeWebsite, scanXSSVulnerability, scanSQLInjection } from "./services/api"
 
 function App() {
@@ -38,6 +39,11 @@ function App() {
     try {
       setCurrentOperation('Resolving hostname')
       await new Promise(resolve => setTimeout(resolve, 300))
+      
+      if (selectedTestsFromModal.whois) {
+        setCurrentOperation('Performing WHOIS lookup')
+        await new Promise(resolve => setTimeout(resolve, 300))
+      }
       
       if (selectedTestsFromModal.ports) {
         setCurrentOperation('Scanning open ports')
@@ -113,6 +119,9 @@ function App() {
         
         {analyzed && !loading && analysisData && (
           <>
+            {selectedTests?.whois && analysisData.whois && analysisData.whois.success && (
+              <WhoisInfo whoisData={analysisData.whois} />
+            )}
             <Dashboard data={analysisData} selectedTests={selectedTests} />
             {((selectedTests?.xss && analysisData.xss_scan) || (selectedTests?.sqli && analysisData.sqli_scan)) && (
               <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-8">

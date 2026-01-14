@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Shield, Bug, Database, CheckCircle } from 'lucide-react';
+import { X, Shield, Bug, Database, CheckCircle, Globe } from 'lucide-react';
 
 const ScanOptionsModal = ({ isOpen, onClose, onConfirm, url }) => {
   const [selectedTests, setSelectedTests] = useState({
@@ -7,7 +7,8 @@ const ScanOptionsModal = ({ isOpen, onClose, onConfirm, url }) => {
     sqli: true,
     ports: true,
     waf: true,
-    tech: true
+    tech: true,
+    whois: true
   });
 
   if (!isOpen) return null;
@@ -24,6 +25,14 @@ const ScanOptionsModal = ({ isOpen, onClose, onConfirm, url }) => {
   };
 
   const tests = [
+    {
+      id: 'whois',
+      name: 'Domain Lookup',
+      description: 'Get domain registration information',
+      icon: Globe,
+      color: 'cyan',
+      recommended: true
+    },
     {
       id: 'ports',
       name: 'Port Scanning',

@@ -1,10 +1,11 @@
-import { Loader2, Shield, Search, Globe, Lock, Bug, Database } from "lucide-react"
+import { Loader2, Shield, Search, Globe, Lock, Bug, Database, FileText } from "lucide-react"
 
 export default function LoadingSection({ isLoading, currentOperation = "Initializing scan...", progress = 0, selectedTests = null }) {
   if (!isLoading) return null
 
   const allScanSteps = [
     { icon: Globe, label: "Resolving hostname", id: 'hostname', weight: 10, testKey: null },
+    { icon: FileText, label: "Performing Domain lookup", id: 'whois', weight: 10, testKey: 'whois' },
     { icon: Search, label: "Scanning open ports", id: 'ports', weight: 25, testKey: 'ports' },
     { icon: Shield, label: "Detecting WAF protection", id: 'waf', weight: 15, testKey: 'waf' },
     { icon: Lock, label: "Detecting technologies", id: 'tech', weight: 15, testKey: 'tech' },
