@@ -1,4 +1,4 @@
-import { Loader2, Shield, Search, Globe, Lock, Bug, Database, FileText } from "lucide-react"
+import { Loader2, Shield, Search, Globe, Lock, Bug, Database, FileText, FileCheck } from "lucide-react"
 
 export default function LoadingSection({ isLoading, currentOperation = "Initializing scan...", progress = 0, selectedTests = null }) {
   if (!isLoading) return null
@@ -11,6 +11,7 @@ export default function LoadingSection({ isLoading, currentOperation = "Initiali
     { icon: Lock, label: "Detecting technologies", id: 'tech', weight: 12, testKey: 'tech' },
     { icon: Bug, label: "Testing XSS vulnerabilities", id: 'xss', weight: 15, testKey: 'xss' },
     { icon: Database, label: "Testing SQL injection", id: 'sqli', weight: 12, testKey: 'sqli' },
+    { icon: FileCheck, label: "Checking CSRF protection", id: 'csrf', weight: 10, testKey: 'csrf' },
     { icon: Shield, label: "Generating AI security analysis", id: 'ai', weight: 13, testKey: 'ai_analysis' },
   ]
 
@@ -21,18 +22,18 @@ export default function LoadingSection({ isLoading, currentOperation = "Initiali
 
   // Calculate progress based on current operation
   const calculateProgress = () => {
-    if (progress > 0) return progress;
+    if (progress > 0) return Math.min(progress, 100);
     
     let calculatedProgress = 0;
     for (const step of scanSteps) {
       if (currentOperation.toLowerCase().includes(step.label.toLowerCase())) {
-        return calculatedProgress + (step.weight / 2);
+        return Math.min(calculatedProgress + (step.weight / 2), 100);
       }
       if (isStepCompleted(step.label)) {
         calculatedProgress += step.weight;
       }
     }
-    return calculatedProgress;
+    return Math.min(calculatedProgress, 100);
   };
 
   const isStepCompleted = (label) => {
@@ -46,9 +47,10 @@ export default function LoadingSection({ isLoading, currentOperation = "Initiali
   const currentProgress = calculateProgress();
 
   return (
-    <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center">
-      <div className="max-w-md w-full mx-4">
-        <div className="rounded-lg bg-slate-800/90 border border-slate-700/50 p-8 backdrop-blur">
+    <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="rounded-lg bg-slate-800/90 border border-slate-700/50 backdrop-blur overflow-y-auto">
+          <div className="p-8">
           {/* Animated Logo/Icon */}
           <div className="flex justify-center mb-8">
             <div className="relative">
@@ -83,8 +85,8 @@ export default function LoadingSection({ isLoading, currentOperation = "Initiali
             </div>
           </div>
 
-          {/* Progress Steps */}
-          <div className="space-y-3 mb-6">
+          {/* Progress Steps - Scrollable */}
+          <div className="space-y-3 mb-6 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
             {scanSteps.map((step, idx) => {
               const IconComponent = step.icon
               const isActive = currentOperation.toLowerCase().includes(step.label.toLowerCase())
@@ -134,6 +136,7 @@ export default function LoadingSection({ isLoading, currentOperation = "Initiali
               <span className="animate-pulse">●</span>
               <span>Scanning in progress...</span>
             </div>
+          </div>
           </div>
         </div>
       </div>

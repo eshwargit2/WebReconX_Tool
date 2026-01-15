@@ -7,9 +7,11 @@ import Dashboard from "./components/Dashboard"
 import LoadingSection from "./components/LoadingSection"
 import XSSVulnerability from "./components/XSSVulnerability"
 import SQLInjection from "./components/SQLInjection"
+import CSRFDetection from "./components/CSRFDetection"
 import SQLInjectionTester from "./components/SQLInjectionTester"
 import ScanOptionsModal from "./components/ScanOptionsModal"
 import WhoisInfo from "./components/WhoisInfo"
+
 import { analyzeWebsite, scanXSSVulnerability, scanSQLInjection } from "./services/api"
 
 function App() {
@@ -21,6 +23,7 @@ function App() {
   const [showModal, setShowModal] = useState(false)
   const [pendingUrl, setPendingUrl] = useState('')
   const [selectedTests, setSelectedTests] = useState(null)
+  
 
   const handleAnalyze = async (url) => {
     setPendingUrl(url)
@@ -128,7 +131,7 @@ function App() {
               <WhoisInfo whoisData={analysisData.whois} />
             )}
             <Dashboard data={analysisData} selectedTests={selectedTests} />
-            {((selectedTests?.xss && analysisData.xss_scan) || (selectedTests?.sqli && analysisData.sqli_scan)) && (
+            {((selectedTests?.xss && analysisData.xss_scan) || (selectedTests?.sqli && analysisData.sqli_scan) || (selectedTests?.csrf && analysisData.csrf_scan)) && (
               <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-8">
                 <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
                   <span className="text-cyan-400">⚡</span>
@@ -139,6 +142,9 @@ function App() {
                 )}
                 {selectedTests?.sqli && analysisData.sqli_scan && (
                   <SQLInjection sqliData={analysisData.sqli_scan} />
+                )}
+                {selectedTests?.csrf && analysisData.csrf_scan && (
+                  <CSRFDetection csrfData={analysisData.csrf_scan} />
                 )}
               </div>
             )}

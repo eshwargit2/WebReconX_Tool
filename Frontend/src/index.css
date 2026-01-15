@@ -38,6 +38,12 @@ body {
   background: #4a5460;
 }
 
+/* Smooth scrolling for all scrollable containers */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #404854 #1a1f26;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

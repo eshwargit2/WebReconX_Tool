@@ -1,0 +1,360 @@
+================================================================================
+                    TEST WEBSITES FOR WEBRECONX PROJECT
+================================================================================
+                  Website URLs for Security Testing Practice
+================================================================================
+
+⚠️ IMPORTANT: Only scan websites you own or have explicit permission to test.
+These websites below are intentionally vulnerable for educational purposes.
+
+📌 ACCURACY NOTE: Test websites can change over time. Sites may add protection,
+   go offline, or update security. Sites marked with ✓ VERIFIED are currently
+   confirmed vulnerable. Always test and verify results yourself.
+
+================================================================================
+                        VULNERABLE TEST WEBSITES
+================================================================================
+
+1. CSRF VULNERABLE SITES
+------------------------
+http://testphp.vulnweb.com
+   - ✓ VERIFIED - Multiple forms without CSRF protection
+   - Login form, search form, comment forms
+   - Guestbook form (no CSRF tokens)
+   - Good for testing CSRF detection
+
+http://testphp.vulnweb.com/login.php
+   - ✓ VERIFIED - Login form without CSRF token
+   - POST form vulnerable
+
+http://demo.testfire.net
+   - Altoro Mutual banking demo site
+   - Login and transfer forms
+   - ⚠️ Mix of protected and unprotected forms
+   - Results may vary
+?test=query
+   - ✓ VERIFIED - Reflected XSS vulnerabilities
+   - Search parameter vulnerable
+   - Try: <script>alert('XSS')</script>
+
+http://testphp.vulnweb.com/comment.php
+   - ✓ VERIFIED - Comment form with XSS
+   - Form fields vulnerable
+
+http://testhtml5.vulnweb.com
+   - HTML5 test site with XSS
+   - Multiple injection points
+   - ⚠️ May be offline sometimes
+
+https://xss-game.appspot.com
+   - Google's XSS challenge game
+   - Educational XSS testing
+   - ✓ ACTIVE - Good for practicegame
+   - Educational XSS testing
+
+http://www.xssgame.com
+   - XSS practice challenges
+
+
+3. SQL INJECTION VULNERABLE SITES
+----------------------------------
+http://testphp.vulnweb.com/listproducts.php?cat=1
+   - ✓ VERIFIED - SQL injection in category parameter
+   - Classic SQLi examples
+   - Try: ?cat=1' OR '1'='1
+
+http://testphp.vulnweb.com/artists.php?artist=1
+   - ✓ VERIFIED - Artist parameter vulnerable
+   - Integer-based SQLi
+
+http://demo.testfire.net/bank/login.aspx
+   - Login bypass vulnerabilities
+   - Username: admin' OR '1'='1
+   - May have mixed protection
+
+⚠️ NOTE: Some sites like webscantest.com may have updated protection.
+   Always verify current status by testing.
+
+
+4. GENERAL VULNERABLE TEST SITES
+---------------------------------
+http://testphp.vulnweb.com
+   - All-in-one vulnerable test site
+   - XSS, SQLi, CSRF, File Upload, etc.
+   - Actively maintained
+
+https://juice-shop.herokuapp.com
+   - OWASP Juice Shop
+   - Modern vulnerable web application
+   - 100+ security challenges
+
+http://zero.webappsecurity.com
+   - Zero Bank - Banking application
+   - Multiple vulnerabilities
+
+http://testasp.vulnweb.com
+   - ASP.NET vulnerable site
+   - Similar to testphp version
+
+http://testaspnet.vulnweb.com
+   - Another ASP.NET test site
+
+
+5. PRACTICE/TRAINING PLATFORMS
+-------------------------------
+https://portswigger.net/web-security
+   - Web Security Academy
+   - Free labs for testing
+
+http://www.dvwa.co.uk
+   - Damn Vulnerable Web Application
+   - Need to install locally
+
+https://www.hackthissite.org
+   - Legal hacking practice
+
+
+================================================================================
+                      NON-VULNERABLE/SECURE WEBSITES
+================================================================================
+
+1. WELL-PROTECTED SITES (FOR COMPARISON)
+----------------------------------------
+https://google.com
+   - All forms have CSRF protection
+   - Strong security headers
+   - Good example of secure site
+
+https://github.com
+   - Strong CSRF protection
+   - Security headers present
+   - Modern security practices
+
+https://facebook.com
+   - Advanced CSRF protection
+   - Multiple security layers
+
+https://twitter.com
+   - OAuth protected
+   - CSRF tokens in all forms
+
+https://amazon.com
+   - Enterprise-level security
+   - WAF protection
+
+
+2. EDUCATIONAL/SAFE SITES
+--------------------------
+https://example.com
+   - Simple test domain
+   - No forms (good for basic tests)
+
+https://httpbin.org
+   - HTTP request/response testing
+   - Safe for port scanning
+
+https://www.wikipedia.org
+   - Good security practices
+   - Forms with protection
+
+
+================================================================================
+                          LOCAL TEST SITES
+================================================================================
+
+If you have local development servers:
+--------------------------------------
+http://localhost:3000
+http://localhost:8080
+http://localhost:5000
+http://127.0.0.1:8000
+
+
+================================================================================
+                        TESTING INSTRUCTIONS
+================================================================================
+
+HOW TO USE THESE WEBSITES:
+--------------------------
+
+1. START YOUR PROJECT:
+   Backend:
+   cd Backend
+   python server.py
+
+   Frontend:
+   cd Frontend
+   npm run dev
+
+2. OPEN YOUR BROWSER:
+   Go to: http://localhost:5173 (or your dev server URL)
+
+3. TEST VULNERABLE SITES:
+   - Enter: testphp.vulnweb.com
+   - Select tests: ✓ CSRF ✓ XSS ✓ SQL Injection
+   - Click "Start Scan"
+   - Should find vulnerabilities
+
+4. TEST SECURE SITES:
+   - Enter: google.com
+   - Select tests: ✓ CSRF ✓ Security Headers
+   - Click "Start Scan"
+   - Should show protection active
+
+5. COMPARE RESULTS:
+   - Vulnerable sites: Red alerts, issues found
+   - Secure sites: Green status, protection confirmed
+
+
+================ (VERIFIED VULNERABLE):
+1. testphp.vulnweb.com         ✓ BEST CHOICE - Multiple vulnerabilities
+2. testphp.vulnweb.com/login.php   ✓ CSRF testing
+3. testphp.vulnweb.com/listproducts.php?cat=1   ✓ SQLi testing
+4. google.com                  ✓ Secure comparison
+
+ADVANCED TESTING:
+5. juice-shop.herokuapp.com    ⚠️ May be slow - Many challenges
+6. demo.testfire.net           ⚠️ Mixed results - Banking app
+7. zero.webappsecurity.com     ⚠️ Check if online
+
+ADVANCED TESTING:
+4. juice-shop.herokuapp.com    (Many challenges)
+5. zero.webappsecurity.com     (Complex scenarios)
+
+
+================================================================================
+                          QUICK TEST COMMANDS
+================================================================================
+
+BACKEND ONLY (No Frontend):
+---------------------------
+cd Backend
+
+# Test CSRF Scanner
+python csrf_scanner.py
+Enter: testphp.vulnweb.com
+
+# Test XSS Scanner
+python xss_scanner.py
+Enter: testphp.vulnweb.com
+
+# Test SQL Injection Scanner
+python test_sqli.py
+Enter: testphp.vulnweb.com
+
+
+FULL STACK (Backend + Frontend):
+--------------------------------
+Terminal 1:
+cd Backend
+python server.py
+
+Terminal 2:
+cd Frontend
+npm run dev
+
+Browser:
+Open: http://localhost:5173
+Test: testphp.vulnweb.com
+
+
+================================================================================
+                            LEGAL NOTICE
+================================================================================
+
+✓ LEGAL TO SCAN:
+   - testphp.vulnweb.com (designed for testing)
+   - demo.testfire.net (intentionally vulnerable)
+   - juice-shop.herokuapp.com (educational)
+   - Your own websites
+   - Websites with explicit permission
+
+✗ ILLEGAL TO SCAN:
+   - Government websites without permission
+   - Banking/Financial sites (production)
+   - Any site without authorization
+   - Commercial sites without consent
+
+
+================================================================================
+                         TROUBLESHOOTING
+================================================================================
+
+If scan fails:
+--------------
+1. Check if website is online
+   - Try opening in browser first
+
+2. Try with/without 'http://'
+   - testphp.vulnweb.com (without)
+   - http://testphp.vulnweb.com (with)
+
+3. Check for WAF/Protection
+   - Some sites block scanning tools
+
+4. Check your internet connection
+
+
+Common Issues:
+-------------
+- Timeout: Website is slow or blocking
+- CORS Error: Add http:// or https:// (VERIFIED)
+================================================================================
+
+VULNERABLE SITE (testphp.vulnweb.com):
+--------------------------------------
+✓ CSRF: 3-6 vulnerable forms found (login, search, comment, guestbook)
+✓ XSS: 2-4 vulnerabilities detected (search, comment parameters)
+✓ SQLi: Protected (Some pages may show as protected - this is NORMAL)
+   Note: SQLi requires specific URLs like /listproducts.php?cat=1
+✓ Ports: 80, 443 open
+✓ WAF: Not detected or weak
+✓ Risk Score: 65-85 (High for CSRF/XSS)
+
+⚠️ IMPORTANT: Not all pages on testphp.vulnweb.com are vulnerable!
+   - Main page may show as protected
+   - Specific endpoints (/login.php, /search.php) are vulnerable
+   - This is EXPECTED and NORMAL behavior------------
+✓ CSRF: 2-5 vulnerable forms found
+✓ XSS: Multiple vulnerabilities detected
+✓ SQLi: SQL injection points found
+✓ Ports: 80, 443 open
+✓ WAF: Not detected or weak
+✓ Risk Score: 75-95 (High)
+
+
+SECURE SITE (google.com):
+-------------------------
+✓ CSRF: All forms protected
+✓ XSS: No vulnerabilities
+✓ SQLi: Protected
+✓ Ports: 80, 443, 8080, 8443 open
+✓ WAF: Detected (GFE/Google)
+✓ Security Headers: All present
+✓ Risk Score: 10-30 (Low)
+
+
+================================================================================
+                      ADDITIONAL RESOURCES
+================================================================================
+
+Learn More:
+-----------
+https://owasp.org/www-project-web-security-testing-guide/
+https://portswigger.net/web-security
+https://www.hacksplaining.com/
+
+
+Report Issues:
+-------------
+If you find false positives or issues with the scanner,
+check the project logs in Backend terminal.
+
+
+================================================================================
+                            HAPPY TESTING! 🔒
+================================================================================
+
+Last Updated: January 2026
+Project: WebReconX - Web Security Analysis Tool
+Version: 1.0.0

@@ -5,6 +5,7 @@ const ScanOptionsModal = ({ isOpen, onClose, onConfirm, url }) => {
   const [selectedTests, setSelectedTests] = useState({
     xss: true,
     sqli: true,
+    csrf: true,
     ports: true,
     waf: true,
     tech: true,
@@ -72,6 +73,14 @@ const ScanOptionsModal = ({ isOpen, onClose, onConfirm, url }) => {
       description: 'Test for SQL injection vulnerabilities',
       icon: Database,
       color: 'red',
+      recommended: true
+    },
+    {
+      id: 'csrf',
+      name: 'CSRF Protection Check',
+      description: 'Verify forms have CSRF token protection',
+      icon: Shield,
+      color: 'yellow',
       recommended: true
     }
   ];
