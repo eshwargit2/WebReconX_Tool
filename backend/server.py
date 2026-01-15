@@ -41,7 +41,7 @@ def analyze_website():
             'waf': True,
             'tech': True,
             'xss': True,
-            'sqli': False,  # SQL injection handled separately
+            'sqli': False, 
             'whois': True
         })
         
