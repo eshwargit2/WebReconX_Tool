@@ -24,7 +24,7 @@ A comprehensive web security analysis tool that performs automated reconnaissanc
 - **Requests** 2.31.0 for HTTP operations
 - **BeautifulSoup4** 4.12.3 for HTML parsing
 - **wafw00f** for WAF detection
-- **python-whois** for domain registration lookups
+- **python-whois** for domain registration lookups 
 - **python-dotenv** for environment variable management
 - **Google Generative AI (Gemini)** for AI-powered security analysis
 - **Modular Architecture**: Separate modules for port scanning, WAF detection, technology detection, XSS scanning, SQL injection scanning, WHOIS lookup, and AI analysis
