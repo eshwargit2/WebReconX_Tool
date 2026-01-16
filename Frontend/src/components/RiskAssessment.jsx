@@ -8,6 +8,7 @@ export default function RiskAssessment({ data }) {
   const riskSummary = aiAnalysis?.risk_summary || ""
   const mostLikelyAttacks = aiAnalysis?.most_likely_attacks || []
   const openPortsCount = data?.total_open_ports || 0
+  const isQuotaError = aiAnalysis?.error === 'quota_exceeded'
   
   // Calculate risk level based on score and AI analysis
   const getRiskLevel = () => {
@@ -68,8 +69,14 @@ export default function RiskAssessment({ data }) {
             <RiskIcon className={`w-5 h-5 ${risk.color}`} />
             <p className={`text-xl font-semibold ${risk.color}`}>{risk.label}</p>
           </div>
+          {isQuotaError && (
+            <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3 mb-3">
+              <p className="text-orange-400 text-sm font-semibold mb-1">⚠️ API Quota Exceeded</p>
+              <p className="text-slate-400 text-xs">Free tier limit: 20 requests/day. Wait for reset or upgrade plan.</p>
+            </div>
+          )}
           {riskSummary && (
-            <p className="text-slate-400 text-sm max-w-md">{riskSummary}</p>
+            <p className={`text-slate-400 text-sm max-w-md ${isQuotaError ? 'mt-2' : ''}`}>{riskSummary}</p>
           )}
         </div>
 

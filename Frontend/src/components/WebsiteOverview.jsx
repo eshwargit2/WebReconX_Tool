@@ -159,6 +159,19 @@ export default function WebsiteOverview({ data, selectedTests }) {
                       <span className="text-slate-300 text-xs font-mono break-all">{portInfo.version}</span>
                     </div>
                   )}
+                  {portInfo.product && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-slate-500 text-xs font-semibold min-w-[80px]">Product:</span>
+                      <span className="text-slate-300 text-xs">{portInfo.product}</span>
+                    </div>
+                  )}
+                  {portInfo.ai_analysis && (
+                    <div className="mt-2 p-2 bg-blue-500/10 border border-blue-500/30 rounded">
+                      <p className="text-xs text-blue-300">
+                        <span className="font-semibold">AI Analysis:</span> {portInfo.ai_analysis}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

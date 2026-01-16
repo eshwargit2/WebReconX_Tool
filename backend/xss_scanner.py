@@ -83,29 +83,39 @@ class XSSScanner:
             return []
     
     def is_reflected(self, payload, response_text):
-        """Check if payload is reflected in response with better detection"""
-        # Direct match
-        if payload in response_text:
-            return True
+        """Check if payload is reflected in response AND potentially exploitable"""
+        # First: Check if the unique marker is even in the response
+        if self.unique_marker not in response_text:
+            return False
         
-        # HTML encoded check
+        # Check if payload is HTML encoded (SAFE - not vulnerable)
         html_encoded = payload.replace('<', '&lt;').replace('>', '&gt;')
         if html_encoded in response_text:
-            return True
+            return False  # Payload is safely encoded
         
-        # Check for script tags
-        if '<script' in payload.lower() and '<script' in response_text.lower():
-            return True
+        # Check if payload appears as-is (potentially dangerous)
+        if payload not in response_text:
+            return False
         
-        # Check for event handlers
-        event_handlers = ['onerror', 'onload', 'onfocus', 'onclick']
-        for handler in event_handlers:
-            if handler in payload.lower() and handler in response_text.lower():
+        # Verify the payload is in an executable context (not just anywhere in the page)
+        # Must find our unique marker inside the dangerous payload structure
+        if '<script' in payload.lower():
+            # Check if our marker appears inside a script tag that we injected
+            pattern = r'<script[^>]*>.*?' + re.escape(self.unique_marker) + r'.*?</script>'
+            if re.search(pattern, response_text, re.IGNORECASE | re.DOTALL):
                 return True
         
-        # Check for unique marker
-        if self.unique_marker in response_text:
-            return True
+        if any(handler in payload.lower() for handler in ['onerror', 'onload', 'onfocus', 'onclick']):
+            # Check if our marker appears in an event handler attribute
+            pattern = r'<[^>]+on\w+\s*=\s*["\']?[^"\'>]*' + re.escape(self.unique_marker)
+            if re.search(pattern, response_text, re.IGNORECASE):
+                return True
+        
+        if 'javascript:' in payload.lower():
+            # Check if our marker appears in javascript: protocol
+            pattern = r'javascript:[^"\'>]*' + re.escape(self.unique_marker)
+            if re.search(pattern, response_text, re.IGNORECASE):
+                return True
         
         return False
     

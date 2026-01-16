@@ -175,7 +175,7 @@ const WhoisInfo = ({ whoisData }) => {
             className="flex items-center gap-2 text-sm text-slate-400 hover:text-cyan-400 transition mb-2"
           >
             {showRaw ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            <span>Raw WHOIS Data</span>
+            <span>Raw Domain Data</span>
           </button>
           {showRaw && (
             <div className="relative">

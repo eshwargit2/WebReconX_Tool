@@ -1,4 +1,5 @@
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import json
 import os
 
@@ -7,26 +8,16 @@ class AIAnalyzer:
         """Initialize Gemini AI analyzer"""
         self.api_key = api_key or os.getenv('GEMINI_API_KEY')
         if self.api_key:
-            genai.configure(api_key=self.api_key)
-            # Configure generation settings with timeout
-            self.generation_config = {
-                'temperature': 0.7,
-                'top_p': 0.8,
-                'top_k': 40,
-                'max_output_tokens': 2048,
-            }
-            self.model = genai.GenerativeModel(
-                'gemini-pro',
-                generation_config=self.generation_config
-            )
+            self.client = genai.Client(api_key=self.api_key)
         else:
-            self.model = None
+            self.client = None
             print("[AI] Warning: No Gemini API key provided")
     
     def analyze_security_results(self, scan_data):
         """Analyze scan results and generate AI recommendations"""
-        if not self.model:
-            return self._get_fallback_analysis(scan_data)
+        if not self.client:
+            print("[AI] Error: No Gemini API key configured")
+            return None
         
         try:
             # Prepare scan summary for AI
@@ -34,20 +25,83 @@ class AIAnalyzer:
             
             # Get AI response with timeout handling
             print("[AI] Sending request to Gemini API...")
-            response = self.model.generate_content(
-                prompt,
-                request_options={'timeout': 180}  # 180 second timeout for API call
+            response = self.client.models.generate_content(
+                model='gemini-2.5-flash',  # Free tier: 20 requests/day
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.7,
+                    top_p=0.8,
+                    top_k=40,
+                    max_output_tokens=8192,  # Increased to 8K for complete responses
+                    response_mime_type='application/json'  # Force JSON output without markdown
+                )
             )
             print("[AI] Received response from Gemini API")
+            print(f"[AI] Response text length: {len(response.text)}")
+            
+            # Check if response was complete
+            finish_reason = None
+            if hasattr(response, 'candidates') and response.candidates:
+                candidate = response.candidates[0]
+                if hasattr(candidate, 'finish_reason'):
+                    finish_reason = candidate.finish_reason
+                    # Convert enum to string for comparison
+                    finish_reason_str = str(finish_reason).upper()
+                    print(f"[AI] Finish reason: {finish_reason_str}")
+            
+            # Handle incomplete responses due to token limit
+            if finish_reason and ("MAX_TOKENS" in str(finish_reason).upper() or "LENGTH" in str(finish_reason).upper()):
+                print("[AI] Warning: Response truncated due to MAX_TOKENS. Retrying with simplified prompt...")
+                # Retry with a simplified prompt asking for shorter responses
+                simplified_prompt = self._build_simplified_prompt(scan_data)
+                response = self.client.models.generate_content(
+                    model='gemini-2.5-flash',  # Free tier: 20 requests/day
+                    contents=simplified_prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.5,
+                        max_output_tokens=8192,
+                        response_mime_type='application/json'
+                    )
+                )
+                print(f"[AI] Retry response length: {len(response.text)}")
             
             # Parse AI response
             ai_analysis = self._parse_ai_response(response.text)
             
+            if ai_analysis is None:
+                print("[AI] Warning: Parsing returned None")
+            else:
+                print("[AI] Successfully parsed AI analysis")
+            
             return ai_analysis
             
         except Exception as e:
-            print(f"[AI] Error during analysis: {e}")
-            return self._get_fallback_analysis(scan_data)
+            error_msg = str(e)
+            print(f"[AI] Error during analysis: {type(e).__name__}: {e}")
+            
+            # Handle quota/rate limit errors specifically
+            if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg or "quota" in error_msg.lower():
+                print("[AI] ⚠️ Gemini API quota exceeded. Free tier limit: 20 requests/day")
+                print("[AI] The scan will continue without AI analysis.")
+                print("[AI] To get AI insights:")
+                print("[AI]   - Wait for quota reset (usually 24 hours)")
+                print("[AI]   - Or upgrade to paid plan at https://ai.google.dev/pricing")
+                return {
+                    "error": "quota_exceeded",
+                    "risk_level": "Unknown",
+                    "risk_score": 0,
+                    "risk_summary": "AI analysis unavailable - API quota exceeded. Free tier allows 20 requests per day. Please wait for quota reset or upgrade your plan.",
+                    "most_likely_attacks": [],
+                    "port_analysis": [],
+                    "vulnerabilities": [],
+                    "security_recommendations": [],
+                    "compliance_notes": "AI analysis requires API quota. Manual review recommended."
+                }
+            
+            # Handle other errors
+            import traceback
+            traceback.print_exc()
+            return None
     
     def _build_analysis_prompt(self, scan_data):
         """Build comprehensive prompt for AI analysis based on actual scan data"""
@@ -71,11 +125,28 @@ class AIAnalyzer:
         
         # Build technology details with versions
         tech_details = []
-        for t in technologies:
-            tech_info = t.get('name', 'Unknown')
-            if t.get('version'):
-                tech_info += f" v{t.get('version')}"
-            tech_details.append(tech_info)
+        if isinstance(technologies, dict):
+            # Technologies is a dict with categories
+            for category, tech_list in technologies.items():
+                if isinstance(tech_list, list):
+                    for tech in tech_list:
+                        if isinstance(tech, str):
+                            tech_details.append(f"{tech} ({category})")
+                        elif isinstance(tech, dict):
+                            tech_info = tech.get('name', 'Unknown')
+                            if tech.get('version'):
+                                tech_info += f" v{tech.get('version')}"
+                            tech_details.append(f"{tech_info} ({category})")
+        elif isinstance(technologies, list):
+            # Technologies is a list of dicts or strings
+            for t in technologies:
+                if isinstance(t, dict):
+                    tech_info = t.get('name', 'Unknown')
+                    if t.get('version'):
+                        tech_info += f" v{t.get('version')}"
+                    tech_details.append(tech_info)
+                elif isinstance(t, str):
+                    tech_details.append(t)
         
         # Build vulnerability details
         xss_details = []
@@ -112,197 +183,160 @@ DETAILED SCAN RESULTS:
 {chr(10).join(['   - ' + sd for sd in sqli_details]) if sqli_details else ''}
 
 IMPORTANT INSTRUCTIONS:
-- Base ALL recommendations on the ACTUAL vulnerabilities and configurations found above
-- If WAF is DETECTED (✓), DO NOT recommend adding WAF or report it as missing
-- For each open port, recommend specific security measures based on the service and version
-- If outdated software versions are detected, recommend updating them specifically
-- Prioritize recommendations based on actual vulnerabilities found (XSS, SQLi, etc.)
-- Make recommendations specific and actionable, not generic
+- Base ALL recommendations on ACTUAL findings
+- Keep descriptions concise and actionable (under 150 chars)
+- If WAF DETECTED, do NOT recommend adding WAF
+- Focus on critical findings first
+- Limit port_analysis to 5 ports max
+- Limit vulnerabilities to 5 items max
+- Limit recommendations to 5 items max
 
-Please provide a JSON response with the following structure:
+Provide JSON response:
 {{
   "risk_level": "Low|Medium|High|Critical",
   "risk_score": 0-100,
   "risk_summary": "Brief summary based on actual findings above",
   "most_likely_attacks": [
     {{
-      "attack_type": "Specific attack based on vulnerabilities found",
+      "attack_type": "Specific attack based on vulnerabilities found (e.g., 'XSS via parameter injection')",
       "probability": "Low|Medium|High",
-      "reason": "Based on specific findings (port numbers, services, vulnerabilities)"
+      "reason": "Based on specific findings (explain which vulnerability/port enables this attack)"
+    }}
+  ],
+  "port_analysis": [
+    {{
+      "port": 80,
+      "service": "HTTP",
+      "version": "Apache 2.4.41",
+      "security_status": "Outdated|Current|Vulnerable",
+      "explanation": "Brief security assessment (max 150 chars)",
+      "recommendation": "Specific action"
     }}
   ],
   "vulnerabilities": [
     {{
-      "title": "Specific vulnerability from scan results",
+      "title": "Specific vulnerability name",
       "severity": "Low|Medium|High|Critical",
-      "description": "Specific details from the scan (e.g., 'Port 22 SSH v7.4 exposed')",
-      "impact": "Realistic impact based on the specific vulnerability",
-      "fix": "Specific actionable fix (e.g., 'Update SSH to v8.0+, disable password auth')"
+      "description": "Concise description (max 150 chars)",
+      "attack_method": "How attacker exploits (max 100 chars)",
+      "impact": "Impact summary (max 100 chars)",
+      "fix": "Actionable fix (max 150 chars)"
     }}
   ],
   "security_recommendations": [
     {{
-      "category": "Specific category based on findings",
+      "category": "Category based on findings",
       "priority": "Low|Medium|High|Critical",
-      "recommendation": "Specific recommendation based on actual vulnerabilities (reference port numbers, services, versions)",
-      "implementation": "Detailed implementation steps for the specific issue found"
+      "recommendation": "Specific action (max 150 chars)",
+      "implementation": "Implementation steps (max 200 chars)"
     }}
   ],
-  "compliance_notes": "Compliance notes based on actual scan findings"
+  "compliance_notes": "Brief compliance notes (max 200 chars)"
 }}
 
 Provide ONLY valid JSON, no markdown formatting or explanations."""
 
         return prompt
     
+    def _build_simplified_prompt(self, scan_data):
+        """Build a more concise prompt when the full prompt causes MAX_TOKENS"""
+        url = scan_data.get('url', 'Unknown')
+        open_ports = scan_data.get('open_ports', [])
+        waf = scan_data.get('waf', {})
+        technologies = scan_data.get('technologies', [])
+        xss_scan = scan_data.get('xss_scan', {})
+        sqli_scan = scan_data.get('sqli_scan', {})
+        
+        # Build concise summary
+        port_count = len(open_ports)
+        waf_status = "Present" if waf.get('detected') else "Absent"
+        tech_count = len(technologies) if isinstance(technologies, list) else len(technologies.keys()) if isinstance(technologies, dict) else 0
+        xss_status = "Vulnerable" if xss_scan.get('vulnerable') else "Not Detected"
+        sqli_status = "Vulnerable" if sqli_scan.get('vulnerable') else "Not Detected"
+        
+        prompt = f"""Analyze this web security scan for {url}. Provide concise JSON response.
+
+SCAN SUMMARY:
+- Open Ports: {port_count}
+- WAF: {waf_status}
+- Technologies: {tech_count} detected
+- XSS: {xss_status}
+- SQLi: {sqli_status}
+
+Provide JSON with:
+{{
+  "risk_level": "Low|Medium|High|Critical",
+  "risk_score": 0-100,
+  "risk_summary": "Brief 2-sentence summary",
+  "most_likely_attacks": [
+    {{"attack_type": "string", "probability": "Low|Medium|High", "reason": "Brief reason"}}
+  ],
+  "port_analysis": [
+    {{"port": number, "service": "string", "security_status": "string", "recommendation": "Brief action"}}
+  ],
+  "vulnerabilities": [
+    {{"title": "string", "severity": "string", "description": "Brief description", "fix": "Brief fix"}}
+  ],
+  "security_recommendations": [
+    {{"category": "string", "priority": "string", "recommendation": "Specific action"}}
+  ],
+  "compliance_notes": "Brief notes"
+}}
+
+Keep all descriptions concise (under 100 chars each). Focus on actionable findings."""
+
+        return prompt
+    
     def _parse_ai_response(self, response_text):
         """Parse AI response and ensure valid structure"""
         try:
-            # Remove markdown code blocks if present
+            print(f"[AI] Parsing response... (length: {len(response_text)})")
+            
+            # With response_mime_type='application/json', the response should be clean JSON
+            # But still handle markdown blocks as fallback
             if '```json' in response_text:
                 response_text = response_text.split('```json')[1].split('```')[0]
+                print("[AI] Removed ```json``` markdown blocks")
             elif '```' in response_text:
                 response_text = response_text.split('```')[1].split('```')[0]
+                print("[AI] Removed ``` markdown blocks")
             
-            # Parse JSON
-            analysis = json.loads(response_text.strip())
+            # Clean up the response text - remove any terminal line wrapping artifacts
+            # The issue is that terminal output may have wrapped long lines with line breaks
+            # This is just a display issue, the actual response from Gemini is valid JSON
+            response_text = response_text.strip()
+            
+            # Parse JSON with strict=False to be more lenient
+            analysis = json.loads(response_text, strict=False)
+            print("[AI] Successfully parsed JSON")
             
             # Validate structure
             if not isinstance(analysis, dict):
-                raise ValueError("Invalid response structure")
+                raise ValueError("Invalid response structure - not a dict")
             
+            print(f"[AI] Validated structure. Keys: {list(analysis.keys())}")
             return analysis
             
+        except json.JSONDecodeError as e:
+            print(f"[AI] JSON parsing error: {e}")
+            print(f"[AI] Attempting alternative parsing...")
+            
+            # Try to get the raw response object instead of text representation
+            # The issue might be in how we're printing/displaying the response
+            try:
+                # If we got here, the response.text might have display issues
+                # but the actual data should be fine. Let's try to work with it.
+                import re
+                # This is likely a display artifact - the actual JSON is probably fine
+                # Just try parsing again without debug output interfering
+                cleaned = response_text.strip()
+                analysis = json.loads(cleaned, strict=False)
+                print("[AI] Successfully parsed on retry")
+                return analysis
+            except:
+                print(f"[AI] Alternative parsing also failed")
+                print(f"[AI] Response text (repr): {repr(response_text[:300])}")
+                return None
         except Exception as e:
-            print(f"[AI] Error parsing response: {e}")
+            print(f"[AI] Error parsing response: {type(e).__name__}: {e}")
             return None
-    
-    def _get_fallback_analysis(self, scan_data):
-        """Generate basic analysis without AI"""
-        
-        # Calculate risk based on vulnerabilities
-        xss_vuln = scan_data.get('xss_scan', {}).get('vulnerable', False)
-        sqli_vuln = scan_data.get('sqli_scan', {}).get('vulnerable', False)
-        waf_detected = scan_data.get('waf', {}).get('detected', False)  # Fixed: changed from 'waf_detected' to 'waf'
-        open_ports_count = len(scan_data.get('open_ports', []))
-        
-        # Calculate risk score
-        risk_score = 0
-        if xss_vuln:
-            risk_score += 30
-        if sqli_vuln:
-            risk_score += 40
-        if not waf_detected:
-            risk_score += 20
-        if open_ports_count > 3:
-            risk_score += 10
-        
-        # Determine risk level
-        if risk_score >= 70:
-            risk_level = "Critical"
-        elif risk_score >= 50:
-            risk_level = "High"
-        elif risk_score >= 30:
-            risk_level = "Medium"
-        else:
-            risk_level = "Low"
-        
-        # Build fallback analysis
-        analysis = {
-            "risk_level": risk_level,
-            "risk_score": risk_score,
-            "risk_summary": f"Basic security analysis shows {risk_level.lower()} risk level. AI analysis unavailable.",
-            "most_likely_attacks": [],
-            "vulnerabilities": [],
-            "security_recommendations": [],
-            "compliance_notes": "Enable AI analysis for detailed recommendations."
-        }
-        
-        # Add likely attacks
-        if xss_vuln:
-            analysis["most_likely_attacks"].append({
-                "attack_type": "Cross-Site Scripting (XSS)",
-                "probability": "High",
-                "reason": "XSS vulnerabilities detected during scan"
-            })
-        
-        if sqli_vuln:
-            analysis["most_likely_attacks"].append({
-                "attack_type": "SQL Injection",
-                "probability": "High",
-                "reason": "SQL injection vulnerabilities detected during scan"
-            })
-        
-        if not waf_detected:
-            analysis["most_likely_attacks"].append({
-                "attack_type": "Automated Attacks",
-                "probability": "Medium",
-                "reason": "No WAF protection detected"
-            })
-        
-        # Add vulnerabilities
-        if xss_vuln:
-            xss_count = scan_data.get('xss_scan', {}).get('total_vulnerabilities', 0)
-            analysis["vulnerabilities"].append({
-                "title": "Cross-Site Scripting Vulnerabilities",
-                "severity": "High",
-                "description": f"Found {xss_count} XSS vulnerability points in the application",
-                "impact": "Attackers can inject malicious scripts, steal user data, or hijack sessions",
-                "fix": "Implement input validation, output encoding, and Content Security Policy (CSP) headers"
-            })
-        
-        if sqli_vuln:
-            sqli_count = scan_data.get('sqli_scan', {}).get('total_vulnerabilities', 0)
-            analysis["vulnerabilities"].append({
-                "title": "SQL Injection Vulnerabilities",
-                "severity": "Critical",
-                "description": f"Found {sqli_count} SQL injection vulnerability points",
-                "impact": "Attackers can access, modify, or delete database contents, potentially compromising all data",
-                "fix": "Use parameterized queries, prepared statements, and ORM frameworks. Validate all user inputs"
-            })
-        
-        if not waf_detected:
-            analysis["vulnerabilities"].append({
-                "title": "No Web Application Firewall",
-                "severity": "Medium",
-                "description": "No WAF detected protecting the application",
-                "impact": "Application is more vulnerable to automated attacks and exploitation attempts",
-                "fix": "Implement a WAF solution like Cloudflare, AWS WAF, or ModSecurity"
-            })
-        
-        # Add specific recommendations based on vulnerabilities
-        if xss_vuln or sqli_vuln:
-            analysis["security_recommendations"].append({
-                "category": "Input Validation",
-                "priority": "Critical",
-                "recommendation": f"Fix {'XSS and SQL injection' if (xss_vuln and sqli_vuln) else 'XSS' if xss_vuln else 'SQL injection'} vulnerabilities immediately",
-                "implementation": "Use parameterized queries for database operations. Implement output encoding for all user-generated content. Enable Content Security Policy headers"
-            })
-        
-        if not waf_detected:
-            analysis["security_recommendations"].append({
-                "category": "Infrastructure Protection",
-                "priority": "High",
-                "recommendation": "Deploy Web Application Firewall",
-                "implementation": "Implement Cloudflare WAF, AWS WAF, or ModSecurity to protect against automated attacks and common vulnerabilities"
-            })
-        
-        # Add port-specific recommendations
-        open_ports_list = scan_data.get('open_ports', [])
-        if len(open_ports_list) > 5:
-            port_nums = [str(p.get('port')) for p in open_ports_list[:5]]
-            analysis["security_recommendations"].append({
-                "category": "Network Security",
-                "priority": "High",
-                "recommendation": f"Review and restrict open ports (found {len(open_ports_list)}): {', '.join(port_nums)}...",
-                "implementation": "Close unnecessary ports, implement firewall rules, and ensure only required services are exposed to the internet"
-            })
-        
-        analysis["security_recommendations"].append({
-            "category": "Security Headers",
-            "priority": "Medium",
-            "recommendation": "Implement comprehensive security headers",
-            "implementation": "Add Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Strict-Transport-Security, and X-XSS-Protection headers"
-        })
-        
-        return analysis

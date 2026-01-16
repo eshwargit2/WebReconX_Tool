@@ -181,30 +181,83 @@ def analyze_website():
             }
         }
         
-        # Generate AI analysis (if selected)
+        # Generate AI analysis (REQUIRED - AI-based project)
         gemini_api_key = data.get('gemini_api_key') or os.getenv('GEMINI_API_KEY')
-        if selected_tests.get('ai_analysis', True) and gemini_api_key:
-            print(f"[*] Generating AI security analysis...")
-            try:
-                ai_analyzer = AIAnalyzer(api_key=gemini_api_key)
-                ai_analysis = ai_analyzer.analyze_security_results(analysis_result)
-                if ai_analysis:
-                    analysis_result['ai_analysis'] = ai_analysis
-                    print("[*] AI analysis completed")
-                else:
-                    print("[!] AI analysis failed, using fallback")
-                    ai_analyzer_fallback = AIAnalyzer(api_key=None)
-                    analysis_result['ai_analysis'] = ai_analyzer_fallback.analyze_security_results(analysis_result)
-            except Exception as ai_error:
-                print(f"[!] AI analysis error: {ai_error}")
-                # Use fallback analysis
-                ai_analyzer_fallback = AIAnalyzer(api_key=None)
-                analysis_result['ai_analysis'] = ai_analyzer_fallback.analyze_security_results(analysis_result)
+        if selected_tests.get('ai_analysis', True):
+            if not gemini_api_key:
+                print("[!] No Gemini API key provided - AI analysis disabled")
+                analysis_result['ai_analysis'] = {
+                    "risk_level": "Unknown",
+                    "risk_score": 0,
+                    "risk_summary": "AI analysis requires Gemini API key. Please provide API key to enable intelligent security analysis.",
+                    "most_likely_attacks": [],
+                    "vulnerabilities": [],
+                    "security_recommendations": [{
+                        "category": "Configuration",
+                        "priority": "High",
+                        "recommendation": "Configure Gemini API key for AI-powered security analysis",
+                        "implementation": "This project uses AI (Gemini) for intelligent vulnerability analysis. Get your free API key from https://makersuite.google.com/app/apikey"
+                    }],
+                    "compliance_notes": "AI analysis disabled - API key required"
+                }
+            else:
+                print(f"[*] Generating AI security analysis with Gemini API...")
+                try:
+                    ai_analyzer = AIAnalyzer(api_key=gemini_api_key)
+                    ai_analysis = ai_analyzer.analyze_security_results(analysis_result)
+                    if ai_analysis:
+                        # Check if it's a quota error
+                        if ai_analysis.get('error') == 'quota_exceeded':
+                            print("[!] Gemini API quota exceeded (20 requests/day limit)")
+                            analysis_result['ai_analysis'] = ai_analysis
+                        else:
+                            analysis_result['ai_analysis'] = ai_analysis
+                            
+                            # Map AI port analysis to open_ports
+                            if 'port_analysis' in ai_analysis and 'open_ports' in analysis_result:
+                                port_analysis_map = {pa['port']: pa for pa in ai_analysis.get('port_analysis', [])}
+                                for port_info in analysis_result['open_ports']:
+                                    port_num = port_info.get('port')
+                                    if port_num in port_analysis_map:
+                                        pa = port_analysis_map[port_num]
+                                        port_info['ai_analysis'] = pa.get('explanation', '')
+                                        port_info['security_status'] = pa.get('security_status', '')
+                                        port_info['ai_recommendation'] = pa.get('recommendation', '')
+                            
+                            print("[*] AI analysis completed successfully")
+                    else:
+                        print("[!] AI analysis failed - no response from Gemini")
+                        analysis_result['ai_analysis'] = {
+                            "risk_level": "Unknown",
+                            "risk_score": 0,
+                            "risk_summary": "AI analysis failed. Please check your Gemini API key and try again.",
+                            "most_likely_attacks": [],
+                            "vulnerabilities": [],
+                            "security_recommendations": [],
+                            "compliance_notes": "AI analysis failed - please retry"
+                        }
+                except Exception as ai_error:
+                    print(f"[!] AI analysis error: {ai_error}")
+                    analysis_result['ai_analysis'] = {
+                        "risk_level": "Unknown",
+                        "risk_score": 0,
+                        "risk_summary": f"AI analysis error: {str(ai_error)}. Please verify your Gemini API key.",
+                        "most_likely_attacks": [],
+                        "vulnerabilities": [],
+                        "security_recommendations": [],
+                        "compliance_notes": f"Error: {str(ai_error)}"
+                    }
         else:
-            print("[*] AI analysis skipped or no API key provided")
-            # Always provide fallback analysis
-            ai_analyzer_fallback = AIAnalyzer(api_key=None)
-            analysis_result['ai_analysis'] = ai_analyzer_fallback.analyze_security_results(analysis_result)
+            print("[*] AI analysis disabled by user")
+            analysis_result['ai_analysis'] = {
+                "risk_level": "Unknown",
+                "risk_score": 0,
+                "risk_summary": "AI analysis disabled",
+                "most_likely_attacks": [],
+                "vulnerabilities": [],
+                "security_recommendations": [],
+                "compliance_notes": "AI analysis was not selected"
+            }
         
         return jsonify(analysis_result), 200
         

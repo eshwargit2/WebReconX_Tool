@@ -15,10 +15,11 @@ export default function Dashboard({ data, selectedTests }) {
         <WebsiteOverview data={data} selectedTests={selectedTests} />
         <div className="lg:col-span-2 space-y-8">
           {showTech && <TechnologyStack data={data} />}
-          <RiskAssessment data={data} />
         </div>
       </div>
 
+      {/* AI Sections moved to bottom */}
+      <RiskAssessment data={data} />
       <IssuesRecommendations data={data} />
 
       {/* <div className="flex justify-center pt-8 pb-4">

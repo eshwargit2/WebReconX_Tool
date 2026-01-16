@@ -5,6 +5,7 @@ export default function IssuesRecommendations({ data }) {
   const vulnerabilities = aiAnalysis?.vulnerabilities || []
   const recommendations = aiAnalysis?.security_recommendations || []
   const complianceNotes = aiAnalysis?.compliance_notes || ""
+  const isQuotaError = aiAnalysis?.error === 'quota_exceeded'
 
   const getSeverityConfig = (severity) => {
     const sev = severity?.toLowerCase()
@@ -60,6 +61,13 @@ export default function IssuesRecommendations({ data }) {
                         </span>
                       </div>
                       <p className="text-sm text-slate-300 mb-2">{vuln.description}</p>
+                      {vuln.attack_method && (
+                        <div className="bg-red-900/20 rounded p-2 mb-2 border border-red-500/30">
+                          <p className="text-xs text-red-300">
+                            <span className="font-semibold text-red-400">Attack Method:</span> {vuln.attack_method}
+                          </p>
+                        </div>
+                      )}
                       {vuln.impact && (
                         <div className="bg-slate-900/50 rounded p-2 mb-2">
                           <p className="text-xs text-slate-400">
@@ -142,11 +150,27 @@ export default function IssuesRecommendations({ data }) {
       {/* Empty state if no AI data */}
       {(!vulnerabilities || vulnerabilities.length === 0) && (!recommendations || recommendations.length === 0) && (
         <div className="rounded-lg bg-slate-800/50 border border-slate-700/50 p-8 backdrop-blur text-center">
-          <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-white mb-2">No Major Issues Detected</h3>
-          <p className="text-slate-400 text-sm">
-            The security scan completed successfully. Enable AI analysis with Gemini API key for detailed recommendations.
-          </p>
+          {isQuotaError ? (
+            <>
+              <AlertCircle className="w-12 h-12 text-orange-400 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-white mb-2">AI Analysis Quota Exceeded</h3>
+              <p className="text-slate-400 text-sm mb-3">
+                Gemini API free tier limit reached (20 requests/day).
+              </p>
+              <p className="text-slate-300 text-sm">
+                The scan completed successfully but detailed AI insights are unavailable. 
+                Your quota will reset in 24 hours, or you can <a href="https://ai.google.dev/pricing" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">upgrade your plan</a> for higher limits.
+              </p>
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-white mb-2">No Major Issues Detected</h3>
+              <p className="text-slate-400 text-sm">
+                The security scan completed successfully. Enable AI analysis with Gemini API key for detailed recommendations.
+              </p>
+            </>
+          )}
         </div>
       )}
     </div>

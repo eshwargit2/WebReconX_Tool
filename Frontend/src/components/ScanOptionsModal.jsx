@@ -3,9 +3,9 @@ import { X, Shield, Bug, Database, CheckCircle, Globe } from 'lucide-react';
 
 const ScanOptionsModal = ({ isOpen, onClose, onConfirm, url }) => {
   const [selectedTests, setSelectedTests] = useState({
-    xss: true,
-    sqli: true,
-    csrf: true,
+    xss: false,
+    sqli: false,
+    csrf: false,
     ports: true,
     waf: true,
     tech: true,
@@ -65,7 +65,7 @@ const ScanOptionsModal = ({ isOpen, onClose, onConfirm, url }) => {
       description: 'Test for Cross-Site Scripting attacks',
       icon: Bug,
       color: 'orange',
-      recommended: true
+      recommended: false
     },
     {
       id: 'sqli',
@@ -73,7 +73,7 @@ const ScanOptionsModal = ({ isOpen, onClose, onConfirm, url }) => {
       description: 'Test for SQL injection vulnerabilities',
       icon: Database,
       color: 'red',
-      recommended: true
+      recommended: false
     },
     {
       id: 'csrf',
@@ -81,7 +81,7 @@ const ScanOptionsModal = ({ isOpen, onClose, onConfirm, url }) => {
       description: 'Verify forms have CSRF token protection',
       icon: Shield,
       color: 'yellow',
-      recommended: true
+      recommended: false
     }
   ];
 

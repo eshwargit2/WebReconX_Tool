@@ -12,7 +12,7 @@ export default function LoadingSection({ isLoading, currentOperation = "Initiali
     { icon: Bug, label: "Testing XSS vulnerabilities", id: 'xss', weight: 15, testKey: 'xss' },
     { icon: Database, label: "Testing SQL injection", id: 'sqli', weight: 12, testKey: 'sqli' },
     { icon: FileCheck, label: "Checking CSRF protection", id: 'csrf', weight: 10, testKey: 'csrf' },
-    { icon: Shield, label: "Generating AI security analysis", id: 'ai', weight: 13, testKey: 'ai_analysis' },
+    { icon: Shield, label: "Generating AI security report", id: 'ai', weight: 13, testKey: 'ai_analysis', isAI: true },
   ]
 
   // Filter steps based on selected tests
@@ -20,20 +20,30 @@ export default function LoadingSection({ isLoading, currentOperation = "Initiali
     ? allScanSteps.filter(step => !step.testKey || selectedTests[step.testKey] === true)
     : allScanSteps;
 
+  // Calculate total weight of active steps
+  const totalWeight = scanSteps.reduce((sum, step) => sum + step.weight, 0);
+
   // Calculate progress based on current operation
   const calculateProgress = () => {
     if (progress > 0) return Math.min(progress, 100);
     
-    let calculatedProgress = 0;
-    for (const step of scanSteps) {
-      if (currentOperation.toLowerCase().includes(step.label.toLowerCase())) {
-        return Math.min(calculatedProgress + (step.weight / 2), 100);
-      }
-      if (isStepCompleted(step.label)) {
-        calculatedProgress += step.weight;
-      }
+    let completedWeight = 0;
+    const currentStepIndex = scanSteps.findIndex(s => 
+      currentOperation.toLowerCase().includes(s.label.toLowerCase())
+    );
+    
+    if (currentStepIndex === -1) return 0;
+    
+    // Add weight of all completed steps
+    for (let i = 0; i < currentStepIndex; i++) {
+      completedWeight += scanSteps[i].weight;
     }
-    return Math.min(calculatedProgress, 100);
+    
+    // Add half weight of current step
+    completedWeight += scanSteps[currentStepIndex].weight / 2;
+    
+    // Convert to percentage based on total weight
+    return Math.min((completedWeight / totalWeight) * 100, 100);
   };
 
   const isStepCompleted = (label) => {
@@ -112,13 +122,20 @@ export default function LoadingSection({ isLoading, currentOperation = "Initiali
                       'text-slate-500'
                     } />
                   </div>
-                  <span className={`text-sm flex-1 ${
-                    isActive ? 'text-white font-semibold' : 
-                    isCompleted ? 'text-green-400' :
-                    'text-slate-500'
-                  }`}>
-                    {step.label}
-                  </span>
+                  <div className="flex-1">
+                    <span className={`text-sm block ${
+                      isActive ? 'text-white font-semibold' : 
+                      isCompleted ? 'text-green-400' :
+                      'text-slate-500'
+                    }`}>
+                      {step.label}
+                    </span>
+                    {isActive && step.isAI && (
+                      <span className="text-xs text-blue-400 block mt-0.5">
+                        Using Gemini AI...
+                      </span>
+                    )}
+                  </div>
                   {isActive && (
                     <Loader2 size={16} className="text-cyan-400 animate-spin" />
                   )}
@@ -136,6 +153,14 @@ export default function LoadingSection({ isLoading, currentOperation = "Initiali
               <span className="animate-pulse">●</span>
               <span>Scanning in progress...</span>
             </div>
+            {currentOperation.toLowerCase().includes('ai') && (
+              <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <p className="text-xs text-blue-300 font-semibold flex items-center justify-center gap-2">
+                  <Loader2 size={14} className="animate-spin" />
+                  AI is analyzing security data... This may take 30-60 seconds
+                </p>
+              </div>
+            )}
           </div>
           </div>
         </div>
