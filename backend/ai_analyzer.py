@@ -7,8 +7,10 @@ class AIAnalyzer:
     def __init__(self, api_key=None):
         """Initialize Gemini AI analyzer"""
         self.api_key = api_key or os.getenv('GEMINI_API_KEY')
+        print(f"[AI INIT] API Key received: {bool(self.api_key)} - First 20 chars: {self.api_key[:20] if self.api_key else 'NONE'}...")
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
+            print(f"[AI INIT] Client created successfully")
         else:
             self.client = None
             print("[AI] Warning: No Gemini API key provided")
@@ -26,7 +28,7 @@ class AIAnalyzer:
             # Get AI response with timeout handling
             print("[AI] Sending request to Gemini API...")
             response = self.client.models.generate_content(
-                model='gemini-2.5-flash',  # Free tier: 20 requests/day
+                model='gemini-2.5-flash',  # Free tier model
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     temperature=0.7,
@@ -55,7 +57,7 @@ class AIAnalyzer:
                 # Retry with a simplified prompt asking for shorter responses
                 simplified_prompt = self._build_simplified_prompt(scan_data)
                 response = self.client.models.generate_content(
-                    model='gemini-2.5-flash',  # Free tier: 20 requests/day
+                    model='gemini-2.5-flash',  # Free tier model
                     contents=simplified_prompt,
                     config=types.GenerateContentConfig(
                         temperature=0.5,

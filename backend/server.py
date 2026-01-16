@@ -8,8 +8,13 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+# Load environment variables from .env file (override existing values)
+load_dotenv(override=True)
+
+# Debug: Print API key status on startup
+api_key_present = bool(os.getenv('GEMINI_API_KEY'))
+api_key_preview = os.getenv('GEMINI_API_KEY', '')[:20] + '...' if os.getenv('GEMINI_API_KEY') else 'NOT FOUND'
+print(f"[SERVER] Gemini API Key loaded: {api_key_present} ({api_key_preview})")
 
 # Import security scanning modules
 from portscanner import scan_ports
@@ -183,6 +188,7 @@ def analyze_website():
         
         # Generate AI analysis (REQUIRED - AI-based project)
         gemini_api_key = data.get('gemini_api_key') or os.getenv('GEMINI_API_KEY')
+        print(f"[SERVER] Using API Key: {bool(gemini_api_key)} - First 20: {gemini_api_key[:20] if gemini_api_key else 'NONE'}...")
         if selected_tests.get('ai_analysis', True):
             if not gemini_api_key:
                 print("[!] No Gemini API key provided - AI analysis disabled")
