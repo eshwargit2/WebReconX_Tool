@@ -23,6 +23,7 @@ function App() {
   const [showModal, setShowModal] = useState(false)
   const [pendingUrl, setPendingUrl] = useState('')
   const [selectedTests, setSelectedTests] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   
 
   const handleAnalyze = async (url) => {
@@ -111,12 +112,14 @@ function App() {
         onConfirm={handleConfirmScan}
         url={pendingUrl}
       />
-      <Header />
-      <main className="container mx-auto px-4 py-8">
-        <SearchSection 
-          onAnalyze={handleAnalyze} 
-          loading={loading}
-        />
+      <Header onSidebarToggle={setSidebarOpen} />
+      {/* Main content with sidebar offset */}
+      <main className={`transition-all duration-300 px-4 py-8 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'}`}>
+        <div className="container mx-auto">
+          <SearchSection 
+            onAnalyze={handleAnalyze} 
+            loading={loading}
+          />
         
         {error && (
           <div className="mb-8 p-4 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400">
@@ -127,12 +130,21 @@ function App() {
         
         {analyzed && !loading && analysisData && (
           <>
+            {/* Domain Information Section */}
             {selectedTests?.whois && analysisData.whois && analysisData.whois.success && (
-              <WhoisInfo whoisData={analysisData.whois} />
+              <div id="domain-info" className="scroll-mt-20">
+                <WhoisInfo whoisData={analysisData.whois} />
+              </div>
             )}
-            <Dashboard data={analysisData} selectedTests={selectedTests} />
+            
+            {/* Website Overview & Technology Stack Section */}
+            <div id="website-overview" className="scroll-mt-20">
+              <Dashboard data={analysisData} selectedTests={selectedTests} />
+            </div>
+            
+            {/* Vulnerabilities Section */}
             {((selectedTests?.xss && analysisData.xss_scan) || (selectedTests?.sqli && analysisData.sqli_scan) || (selectedTests?.csrf && analysisData.csrf_scan)) && (
-              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-8">
+              <div id="vulnerabilities" className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-8 scroll-mt-20">
                 <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
                   <span className="text-cyan-400">⚡</span>
                   Vulnerability Assessment
@@ -150,6 +162,7 @@ function App() {
             )}
           </>
         )}
+        </div>
       </main>
     </div>
   )

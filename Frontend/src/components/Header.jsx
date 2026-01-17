@@ -1,10 +1,20 @@
-import { Shield, User, Key, X, Check } from "lucide-react"
+import { Shield, User, Key, X, Check, Menu, Home, FileText, Settings, Info, BookOpen, Globe, Layers, TrendingUp, Lightbulb, Bug, ChevronRight } from "lucide-react"
 import { useState } from "react"
 
-export default function Header() {
+export default function Header({ onSidebarToggle }) {
   const [showApiKeyModal, setShowApiKeyModal] = useState(false)
   const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '')
   const [saved, setSaved] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+
+  const handleSidebarToggle = () => {
+    const newState = !sidebarOpen
+    setSidebarOpen(newState)
+    if (onSidebarToggle) {
+      onSidebarToggle(newState)
+    }
+  }
 
   const handleSaveApiKey = () => {
     localStorage.setItem('gemini_api_key', apiKey)
@@ -21,30 +31,53 @@ export default function Header() {
     setSaved(false)
   }
 
+  const menuItems = [
+    { icon: Home, label: 'Home', href: '#', badge: null },
+    { icon: FileText, label: 'Report History', href: '#history', badge: null },
+    { icon: BookOpen, label: 'Documentation', href: '#docs', badge: null },
+    { icon: Info, label: 'About', href: '#about', badge: null }
+  ]
+
+  const scanMenuItems = [
+    { icon: Globe, label: 'Domain Information', href: '#domain-info' },
+    { icon: Globe, label: 'Website Overview', href: '#website-overview' },
+    { icon: Layers, label: 'Technology Stack', href: '#tech-stack' },
+    { icon: TrendingUp, label: 'Risk Assessment', href: '#risk-assessment' },
+    { icon: Lightbulb, label: 'Recommendations', href: '#recommendations' },
+    { icon: Bug, label: 'Vulnerabilities', href: '#vulnerabilities' }
+  ]
+
+  const scrollToSection = (href) => {
+    const element = document.querySelector(href)
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+    setMobileMenuOpen(false)
+  }
+
   return (
     <>
-      <header className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-md">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
+      {/* Top Header - Minimal */}
+      <header className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-md sticky top-0 z-40">
+        <div className="flex items-center justify-between px-4 py-4">
+          {/* Logo Section */}
           <div className="flex items-center gap-3">
+            <button 
+              onClick={handleSidebarToggle}
+              className="p-2 rounded-lg hover:bg-slate-800 transition"
+              title="Toggle Menu"
+            >
+              <Menu size={20} className="text-slate-400" />
+            </button>
             <div className="rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 p-2">
               <Shield size={24} className="text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white">WebReconX</h1>
+            <h1 className="text-xl lg:text-2xl font-bold text-white">WebReconX</h1>
           </div>
 
-          <nav className="hidden gap-8 md:flex">
-            <a href="#" className="text-slate-300 hover:text-cyan-400 transition">
-              Home
-            </a>
-            <a href="#" className="text-slate-300 hover:text-cyan-400 transition">
-              Features
-            </a>
-            <a href="#" className="text-slate-300 hover:text-cyan-400 transition">
-              Report History
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-4">
+          {/* Right Actions */}
+          <div className="flex items-center gap-2">
+            {/* AI API Key Button */}
             <button 
               onClick={() => setShowApiKeyModal(true)}
               className={`flex items-center gap-2 rounded-lg px-3 py-2 transition ${
@@ -57,12 +90,70 @@ export default function Header() {
                 {apiKey ? 'AI Enabled' : 'Setup AI'}
               </span>
             </button>
-            <button className="rounded-full p-2 hover:bg-slate-800 transition">
+
+            {/* User Profile Button */}
+            <button className="hidden md:flex rounded-full p-2 hover:bg-slate-800 transition">
               <User size={20} className="text-slate-400" />
             </button>
           </div>
         </div>
       </header>
+
+      {/* Sidebar Navigation */}
+      <aside className={`fixed left-0 top-[73px] h-[calc(100vh-73px)] bg-slate-900/95 backdrop-blur-md border-r border-slate-700/50 transition-transform duration-300 z-30 w-64 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <nav className="flex flex-col h-full p-4 overflow-y-auto">
+          {/* Main Menu */}
+          <div className="space-y-2 mb-6">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-3">Main Menu</p>
+            <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 transition group">
+              <Home size={20} className="group-hover:scale-110 transition-transform" />
+              <span className="font-medium">Home</span>
+            </a>
+            <a href="#history" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 transition group">
+              <FileText size={20} className="group-hover:scale-110 transition-transform" />
+              <span className="font-medium">Report History</span>
+            </a>
+          </div>
+
+          {/* Scan Sections */}
+          <div className="space-y-2 mb-6">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-3">Scan Sections</p>
+            {scanMenuItems.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => scrollToSection(item.href)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 transition group text-left"
+              >
+                <item.icon size={20} className="group-hover:scale-110 transition-transform" />
+                <span className="font-medium">{item.label}</span>
+                <ChevronRight size={16} className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
+            ))}
+          </div>
+
+          {/* Bottom Menu */}
+          <div className="mt-auto space-y-2 pt-6 border-t border-slate-700/50">
+            <a href="#docs" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 transition group">
+              <BookOpen size={20} className="group-hover:scale-110 transition-transform" />
+              <span className="font-medium">Documentation</span>
+            </a>
+            <a href="#about" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 transition group">
+              <Info size={20} className="group-hover:scale-110 transition-transform" />
+              <span className="font-medium">About</span>
+            </a>
+          </div>
+        </nav>
+      </aside>
+
+      {/* Overlay for mobile */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 z-20 lg:hidden top-[73px]"
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+      )}
 
       {/* API Key Modal */}
       {showApiKeyModal && (

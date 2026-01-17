@@ -13,14 +13,18 @@ export default function Dashboard({ data, selectedTests }) {
     <div className="space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <WebsiteOverview data={data} selectedTests={selectedTests} />
-        <div className="lg:col-span-2 space-y-8">
+        <div id="tech-stack" className="lg:col-span-2 space-y-8 scroll-mt-20">
           {showTech && <TechnologyStack data={data} />}
         </div>
       </div>
 
       {/* AI Sections moved to bottom */}
-      <RiskAssessment data={data} />
-      <IssuesRecommendations data={data} />
+      <div id="risk-assessment" className="scroll-mt-20">
+        <RiskAssessment data={data} />
+      </div>
+      <div id="recommendations" className="scroll-mt-20">
+        <IssuesRecommendations data={data} />
+      </div>
 
       {/* <div className="flex justify-center pt-8 pb-4">
         <button className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-8 py-3 rounded-lg font-semibold transition">
