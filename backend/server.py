@@ -24,7 +24,6 @@ from xss_scanner import scan_xss
 from sqli_scanner import SQLiScanner
 from whois_lookup import perform_whois_lookup
 from ai_analyzer import AIAnalyzer
-from csrf_scanner import scan_csrf
 
 app = Flask(__name__)
 CORS(app)
@@ -82,7 +81,6 @@ def analyze_website():
         xss_results = {}
         sqli_results = {}
         whois_info = {}
-        csrf_results = {}
         
         # WHOIS Lookup (if selected)
         if selected_tests.get('whois', True):
@@ -129,20 +127,6 @@ def analyze_website():
             print("[*] XSS scanning skipped")
             xss_results = {'total_vulnerabilities': 0, 'tested_payloads': 0}
         
-        # Scan for CSRF vulnerabilities (if selected)
-        if selected_tests.get('csrf', False):
-            print(f"[*] Scanning for CSRF vulnerabilities on {url}...")
-            
-            # Test URL for CSRF - try HTTP first, then HTTPS
-            if not url.startswith(('http://', 'https://')):
-                test_url = f"http://{url}"
-            else:
-                test_url = url
-            csrf_results = scan_csrf(test_url)
-        else:
-            print("[*] CSRF scanning skipped")
-            csrf_results = {'total_forms': 0, 'vulnerable_forms_count': 0, 'is_vulnerable': False}
-        
         # Get hostname
         try:
             hostname = socket.gethostbyaddr(ip_address)[0]
@@ -176,12 +160,11 @@ def analyze_website():
             'whois': whois_info,
             'xss_scan': xss_results,
             'sqli_scan': sqli_results,
-            'csrf_scan': csrf_results,  # Include CSRF scan results
             'scan_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'message': f'Analysis completed for {url}',
             'data': {
                 'risk_score': risk_score,
-                'vulnerabilities_found': len(open_ports) + xss_results.get('total_vulnerabilities', 0) + csrf_results.get('vulnerable_forms_count', 0),
+                'vulnerabilities_found': len(open_ports) + xss_results.get('total_vulnerabilities', 0),
                 'scan_date': datetime.now().strftime('%Y-%m-%d')
             }
         }

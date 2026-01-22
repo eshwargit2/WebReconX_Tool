@@ -6,7 +6,7 @@ export default function Header({ onSidebarToggle }) {
   const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '')
   const [saved, setSaved] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const handleSidebarToggle = () => {
     const newState = !sidebarOpen

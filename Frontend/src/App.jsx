@@ -7,7 +7,6 @@ import Dashboard from "./components/Dashboard"
 import LoadingSection from "./components/LoadingSection"
 import XSSVulnerability from "./components/XSSVulnerability"
 import SQLInjection from "./components/SQLInjection"
-import CSRFDetection from "./components/CSRFDetection"
 import SQLInjectionTester from "./components/SQLInjectionTester"
 import ScanOptionsModal from "./components/ScanOptionsModal"
 import WhoisInfo from "./components/WhoisInfo"
@@ -18,6 +17,7 @@ function App() {
   const [analyzed, setAnalyzed] = useState(false)
   const [loading, setLoading] = useState(false)
   const [currentOperation, setCurrentOperation] = useState('')
+  const [scanProgress, setScanProgress] = useState(0)
   const [analysisData, setAnalysisData] = useState(null)
   const [error, setError] = useState(null)
   const [showModal, setShowModal] = useState(false)
@@ -36,50 +36,44 @@ function App() {
     setLoading(true)
     setError(null)
     setAnalyzed(false)
+    setScanProgress(0)
     setSelectedTests(selectedTestsFromModal)
     
     const url = pendingUrl
     
     try {
-      setCurrentOperation('Resolving hostname')
-      await new Promise(resolve => setTimeout(resolve, 300))
-      
-      if (selectedTestsFromModal.whois) {
-        setCurrentOperation('Performing WHOIS lookup')
-        await new Promise(resolve => setTimeout(resolve, 300))
+      // Calculate total steps based on selected tests
+      const steps = [
+        { name: 'Resolving hostname', duration: 500, condition: true },
+        { name: 'Performing Domain lookup', duration: 800, condition: selectedTestsFromModal.whois },
+        { name: 'Scanning open ports', duration: 1500, condition: selectedTestsFromModal.ports },
+        { name: 'Detecting WAF protection', duration: 800, condition: selectedTestsFromModal.waf },
+        { name: 'Detecting technologies', duration: 800, condition: selectedTestsFromModal.tech },
+        { name: 'Testing XSS vulnerabilities', duration: 1000, condition: selectedTestsFromModal.xss },
+        { name: 'Testing SQL injection', duration: 1000, condition: selectedTestsFromModal.sqli },
+        { name: 'Generating AI security report', duration: 2000, condition: selectedTestsFromModal.ai_analysis !== false },
+      ].filter(step => step.condition);
+
+      const totalSteps = steps.length;
+      let currentStep = 0;
+
+      // Update progress for each step
+      for (const step of steps) {
+        setCurrentOperation(step.name)
+        setScanProgress(Math.round((currentStep / totalSteps) * 100))
+        await new Promise(resolve => setTimeout(resolve, step.duration))
+        currentStep++
       }
       
-      if (selectedTestsFromModal.ports) {
-        setCurrentOperation('Scanning open ports')
-        await new Promise(resolve => setTimeout(resolve, 300))
-      }
-      
-      if (selectedTestsFromModal.waf) {
-        setCurrentOperation('Detecting WAF protection')
-        await new Promise(resolve => setTimeout(resolve, 300))
-      }
-      
-      if (selectedTestsFromModal.tech) {
-        setCurrentOperation('Detecting technologies')
-        await new Promise(resolve => setTimeout(resolve, 300))
-      }
-      
-      // Show AI analysis operation before backend call
-      if (selectedTestsFromModal.ai_analysis !== false) {
-        setCurrentOperation('Generating AI security analysis')
-      }
+      setScanProgress(95) // Show near completion before final API response
       
       // Pass selected tests to backend - AI analysis happens after all scans
       const data = await analyzeWebsite(url, selectedTestsFromModal)
       
-      // Run XSS scan if selected (already handled by backend)
-      if (selectedTestsFromModal.xss) {
-        setCurrentOperation('Testing XSS vulnerabilities')
-      }
-      
-      // Run SQL injection scan if selected
+      // Run SQL injection scan if selected (separate endpoint)
       if (selectedTestsFromModal.sqli) {
         setCurrentOperation('Testing SQL injection')
+        setScanProgress(97)
         try {
           const sqliData = await scanSQLInjection(url)
           data.sqli_scan = sqliData.sqli_scan
@@ -88,6 +82,7 @@ function App() {
         }
       }
       
+      setScanProgress(100)
       setAnalysisData(data)
       setAnalyzed(true)
     } catch (err) {
@@ -96,6 +91,7 @@ function App() {
     } finally {
       setLoading(false)
       setCurrentOperation('')
+      setScanProgress(0)
     }
   }
 
@@ -108,6 +104,7 @@ function App() {
       />
       <ScanOptionsModal 
         isOpen={showModal}
+        progress={scanProgress}
         onClose={() => setShowModal(false)}
         onConfirm={handleConfirmScan}
         url={pendingUrl}
@@ -143,7 +140,7 @@ function App() {
             </div>
             
             {/* Vulnerabilities Section */}
-            {((selectedTests?.xss && analysisData.xss_scan) || (selectedTests?.sqli && analysisData.sqli_scan) || (selectedTests?.csrf && analysisData.csrf_scan)) && (
+            {((selectedTests?.xss && analysisData.xss_scan) || (selectedTests?.sqli && analysisData.sqli_scan)) && (
               <div id="vulnerabilities" className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-8 scroll-mt-20">
                 <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
                   <span className="text-cyan-400">⚡</span>
@@ -154,9 +151,6 @@ function App() {
                 )}
                 {selectedTests?.sqli && analysisData.sqli_scan && (
                   <SQLInjection sqliData={analysisData.sqli_scan} />
-                )}
-                {selectedTests?.csrf && analysisData.csrf_scan && (
-                  <CSRFDetection csrfData={analysisData.csrf_scan} />
                 )}
               </div>
             )}

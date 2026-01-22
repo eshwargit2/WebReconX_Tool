@@ -11,7 +11,6 @@ export default function LoadingSection({ isLoading, currentOperation = "Initiali
     { icon: Lock, label: "Detecting technologies", id: 'tech', weight: 12, testKey: 'tech' },
     { icon: Bug, label: "Testing XSS vulnerabilities", id: 'xss', weight: 15, testKey: 'xss' },
     { icon: Database, label: "Testing SQL injection", id: 'sqli', weight: 12, testKey: 'sqli' },
-    { icon: FileCheck, label: "Checking CSRF protection", id: 'csrf', weight: 10, testKey: 'csrf' },
     { icon: Shield, label: "Generating AI security report", id: 'ai', weight: 13, testKey: 'ai_analysis', isAI: true },
   ]
 
@@ -25,14 +24,15 @@ export default function LoadingSection({ isLoading, currentOperation = "Initiali
 
   // Calculate progress based on current operation
   const calculateProgress = () => {
-    if (progress > 0) return Math.min(progress, 100);
+    // If explicit progress is provided and valid, use it
+    if (progress > 0 && progress <= 100) return progress;
     
     let completedWeight = 0;
     const currentStepIndex = scanSteps.findIndex(s => 
       currentOperation.toLowerCase().includes(s.label.toLowerCase())
     );
     
-    if (currentStepIndex === -1) return 0;
+    if (currentStepIndex === -1) return 5; // Show minimal progress if no match
     
     // Add weight of all completed steps
     for (let i = 0; i < currentStepIndex; i++) {
@@ -43,7 +43,7 @@ export default function LoadingSection({ isLoading, currentOperation = "Initiali
     completedWeight += scanSteps[currentStepIndex].weight / 2;
     
     // Convert to percentage based on total weight
-    return Math.min((completedWeight / totalWeight) * 100, 100);
+    return Math.min(Math.round((completedWeight / totalWeight) * 100), 95);
   };
 
   const isStepCompleted = (label) => {
