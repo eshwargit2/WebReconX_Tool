@@ -11,30 +11,19 @@ These websites below are intentionally vulnerable for educational purposes.
    go offline, or update security. Sites marked with ✓ VERIFIED are currently
    confirmed vulnerable. Always test and verify results yourself.
 
+⚠️ SQL INJECTION TESTING: You MUST enter the complete URL with parameters!
+   Example: http://testphp.vulnweb.com/listproducts.php?cat=1
+   NOT just: testphp.vulnweb.com (this will not detect SQLi)
+
 ================================================================================
                         VULNERABLE TEST WEBSITES
 ================================================================================
 
-1. CSRF VULNERABLE SITES
-------------------------
+1. XSS (CROSS-SITE SCRIPTING) VULNERABLE SITES
+----------------------------------------------
 http://testphp.vulnweb.com
-   - ✓ VERIFIED - Multiple forms without CSRF protection
-   - Login form, search form, comment forms
-   - Guestbook form (no CSRF tokens)
-   - Good for testing CSRF detection
-
-http://testphp.vulnweb.com/login.php
-   - ✓ VERIFIED - Login form without CSRF token
-   - POST form vulnerable
-
-http://demo.testfire.net
-   - Altoro Mutual banking demo site
-   - Login and transfer forms
-   - ⚠️ Mix of protected and unprotected forms
-   - Results may vary
-?test=query
    - ✓ VERIFIED - Reflected XSS vulnerabilities
-   - Search parameter vulnerable
+   - Search parameter vulnerable  
    - Try: <script>alert('XSS')</script>
 
 http://testphp.vulnweb.com/comment.php
@@ -49,16 +38,14 @@ http://testhtml5.vulnweb.com
 https://xss-game.appspot.com
    - Google's XSS challenge game
    - Educational XSS testing
-   - ✓ ACTIVE - Good for practicegame
+   - ✓ ACTIVE - Good for practice
    - Educational XSS testing
 
 http://www.xssgame.com
    - XSS practice challenges
 
-http://testphp.vulnweb.com/artists.php?artist=1
 
-
-3. SQL INJECTION VULNERABLE SITES
+2. SQL INJECTION VULNERABLE SITES
 ----------------------------------
 http://testphp.vulnweb.com/listproducts.php?cat=1
    - ✓ VERIFIED - SQL injection in category parameter
@@ -78,7 +65,7 @@ http://demo.testfire.net/bank/login.aspx
    Always verify current status by testing.
 
 
-4. GENERAL VULNERABLE TEST SITES
+3. GENERAL VULNERABLE TEST SITES
 ---------------------------------
 http://testphp.vulnweb.com
    - All-in-one vulnerable test site
@@ -102,7 +89,7 @@ http://testaspnet.vulnweb.com
    - Another ASP.NET test site
 
 
-5. PRACTICE/TRAINING PLATFORMS
+4. PRACTICE/TRAINING PLATFORMS
 -------------------------------
 https://portswigger.net/web-security
    - Web Security Academy
@@ -192,27 +179,36 @@ HOW TO USE THESE WEBSITES:
    Go to: http://localhost:5173 (or your dev server URL)
 
 3. TEST VULNERABLE SITES:
+
+   For XSS Testing:
    - Enter: testphp.vulnweb.com
-   - Select tests: ✓ CSRF ✓ XSS ✓ SQL Injection
+   - Select tests: ✓ XSS ✓ Ports ✓ WAF ✓ Tech
    - Click "Start Scan"
-   - Should find vulnerabilities
+   - Should find XSS vulnerabilities
+
+   For SQL Injection Testing (IMPORTANT!):
+   - Enter COMPLETE URL: http://testphp.vulnweb.com/listproducts.php?cat=1
+   - Select tests: ✓ SQL Injection ✓ AI Analysis
+   - Click "Start Scan"
+   - Should find 13+ SQL injection vulnerabilities
+   - ⚠️ Must include the full path and ?parameter=value
 
 4. TEST SECURE SITES:
    - Enter: google.com
-   - Select tests: ✓ CSRF ✓ Security Headers
+   - Select tests: ✓ XSS ✓ SQL Injection
    - Click "Start Scan"
-   - Should show protection active
+   - Should show protection active (no vulnerabilities)
 
 5. COMPARE RESULTS:
    - Vulnerable sites: Red alerts, issues found
    - Secure sites: Green status, protection confirmed
 
 
-================ (VERIFIED VULNERABLE):
-1. testphp.vulnweb.com         ✓ BEST CHOICE - Multiple vulnerabilities
-2. testphp.vulnweb.com/login.php   ✓ CSRF testing
-3. testphp.vulnweb.com/listproducts.php?cat=1   ✓ SQLi testing
-4. google.com                  ✓ Secure comparison
+QUICK START - TOP RECOMMENDATIONS (VERIFIED VULNERABLE):
+1. testphp.vulnweb.com                              ✓ XSS testing
+2. http://testphp.vulnweb.com/listproducts.php?cat=1  ✓ SQLi testing (13+ vulns)
+3. http://testphp.vulnweb.com/artists.php?artist=1    ✓ SQLi testing (12+ vulns)
+4. google.com                                       ✓ Secure comparison
 
 ADVANCED TESTING:
 5. juice-shop.herokuapp.com    ⚠️ May be slow - Many challenges
@@ -232,17 +228,13 @@ BACKEND ONLY (No Frontend):
 ---------------------------
 cd Backend
 
-# Test CSRF Scanner
-python csrf_scanner.py
-Enter: testphp.vulnweb.com
-
 # Test XSS Scanner
 python xss_scanner.py
 Enter: testphp.vulnweb.com
 
 # Test SQL Injection Scanner
 python test_sqli.py
-Enter: testphp.vulnweb.com
+Enter: http://testphp.vulnweb.com/listproducts.php?cat=1
 
 
 FULL STACK (Backend + Frontend):

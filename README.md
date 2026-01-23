@@ -6,7 +6,7 @@ A comprehensive web security analysis tool that performs automated reconnaissanc
 
 - **AI-Powered Security Analysis**: Uses Google Gemini AI to generate contextual security recommendations based on detected vulnerabilities, open ports with versions, and technology stack
 - **Selective Test Execution**: Interactive modal allows you to choose which security tests to run (XSS, SQL Injection, Port Scanning, WAF Detection, Technology Detection, WHOIS Lookup, AI Analysis)
-- **SQL Injection Scanning**: Tests for SQL injection vulnerabilities using 5 optimized payloads targeting basic injection points
+- **SQL Injection Scanning**: Advanced testing with 13 optimized payloads detecting Error-based, Boolean-based, Union-based, and Time-based SQL injection vulnerabilities
 - **XSS Vulnerability Scanning**: Tests for Cross-Site Scripting vulnerabilities using optimized payloads across forms and URL parameters
 - **Technology Detection**: Automatically identifies frontend frameworks (React, Angular, Vue), backend technologies (Django, Node.js, WordPress), CSS frameworks, and server software with version detection
 - **Web Application Firewall (WAF) Detection**: Detects 15+ WAF types including AWS WAF, Cloudflare, Akamai, Imperva, and more with confidence levels
@@ -108,7 +108,11 @@ The frontend will start on `http://localhost:5173` (or another available port)
 
 1. Open your browser and navigate to the frontend URL (default: `http://localhost:5173`)
 
-2. Enter a target website URL in the search field (e.g., `https://example.com`)
+2. **Enter a target website URL** in the search field:
+   - **For XSS testing**: Enter just the domain (e.g., `testphp.vulnweb.com`)
+   - **For SQL Injection testing**: Enter the COMPLETE URL with parameters
+     - ✅ Correct: `http://testphp.vulnweb.com/listproducts.php?cat=1`
+     - ❌ Wrong: `testphp.vulnweb.com` (will not detect SQLi - no parameters!)
 
 3. Click the **"Analyze Security"** button
 
@@ -117,7 +121,7 @@ The frontend will start on `http://localhost:5173` (or another available port)
    - ✅ **WAF Detection** - Check for Web Application Firewall
    - ✅ **Technology Detection** - Identify web technologies and frameworks
    - ✅ **XSS Vulnerability Test** - Test for Cross-Site Scripting attacks
-   - ✅ **SQL Injection Test** - Test for SQL injection vulnerabilities
+   - ✅ **SQL Injection Test** - Test for SQL injection vulnerabilities (REQUIRES URL with parameters!)
    - ✅ **WHOIS Lookup** - Get domain registration information
    - ✅ **AI Analysis** - Generate AI-powered security recommendations (requires Gemini API key)
    
@@ -131,7 +135,7 @@ The frontend will start on `http://localhost:5173` (or another available port)
    - WAF detection (if selected)
    - Technology stack identification (if selected)
    - XSS vulnerability testing (if selected)
-   - SQL injection testing (if selected)
+   - SQL injection testing (if selected) - scans URL parameters for vulnerabilities
    - WHOIS lookup (if selected)
    - AI-powered analysis (if selected - runs after all scans complete)
 
@@ -140,7 +144,7 @@ The frontend will start on `http://localhost:5173` (or another available port)
    - WAF protection status (if scanned)
    - Detected technologies by category (if scanned)
    - XSS vulnerability status with attack details (if scanned)
-   - SQL injection vulnerability status with payload details (if scanned)
+   - SQL injection vulnerability status with detailed payload evidence (if scanned)
    - WHOIS information (if scanned)
    - AI-generated risk assessment and recommendations (if AI analysis selected)
 
