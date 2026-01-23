@@ -32,7 +32,9 @@ http://demo.testfire.net
    - Login and transfer forms
    - ⚠️ Mix of protected and unprotected forms
    - Results may vary
-?test=query
+2. XSS (CROSS-SITE SCRIPTING) VULNERABLE SITES
+-----------------------------------------------
+http://testphp.vulnweb.com/search.php?test=query
    - ✓ VERIFIED - Reflected XSS vulnerabilities
    - Search parameter vulnerable
    - Try: <script>alert('XSS')</script>
@@ -49,13 +51,11 @@ http://testhtml5.vulnweb.com
 https://xss-game.appspot.com
    - Google's XSS challenge game
    - Educational XSS testing
-   - ✓ ACTIVE - Good for practicegame
-   - Educational XSS testing
+   - ✓ ACTIVE - Good for practice
 
 http://www.xssgame.com
    - XSS practice challenges
-
-http://testphp.vulnweb.com/artists.php?artist=1
+   - Multiple difficulty levels
 
 
 3. SQL INJECTION VULNERABLE SITES
@@ -208,20 +208,20 @@ HOW TO USE THESE WEBSITES:
    - Secure sites: Green status, protection confirmed
 
 
-================ (VERIFIED VULNERABLE):
-1. testphp.vulnweb.com         ✓ BEST CHOICE - Multiple vulnerabilities
-2. testphp.vulnweb.com/login.php   ✓ CSRF testing
-3. testphp.vulnweb.com/listproducts.php?cat=1   ✓ SQLi testing
-4. google.com                  ✓ Secure comparison
+================================================================================
+                        RECOMMENDED TEST SITES
+================================================================================
+
+BEST FOR BEGINNERS (VERIFIED VULNERABLE):
+1. testphp.vulnweb.com                           ✓ BEST CHOICE - Multiple vulnerabilities
+2. testphp.vulnweb.com/login.php                 ✓ CSRF testing
+3. testphp.vulnweb.com/listproducts.php?cat=1    ✓ SQLi testing
+4. google.com                                    ✓ Secure comparison
 
 ADVANCED TESTING:
 5. juice-shop.herokuapp.com    ⚠️ May be slow - Many challenges
 6. demo.testfire.net           ⚠️ Mixed results - Banking app
 7. zero.webappsecurity.com     ⚠️ Check if online
-
-ADVANCED TESTING:
-4. juice-shop.herokuapp.com    (Many challenges)
-5. zero.webappsecurity.com     (Complex scenarios)
 
 
 ================================================================================
@@ -300,7 +300,13 @@ If scan fails:
 Common Issues:
 -------------
 - Timeout: Website is slow or blocking
-- CORS Error: Add http:// or https:// (VERIFIED)
+- CORS Error: Add http:// or https://
+- 404 Error: Site may be offline or URL incorrect
+- Connection Refused: Check backend server is running
+
+
+================================================================================
+                        EXPECTED SCAN RESULTS
 ================================================================================
 
 VULNERABLE SITE (testphp.vulnweb.com):
@@ -316,13 +322,7 @@ VULNERABLE SITE (testphp.vulnweb.com):
 ⚠️ IMPORTANT: Not all pages on testphp.vulnweb.com are vulnerable!
    - Main page may show as protected
    - Specific endpoints (/login.php, /search.php) are vulnerable
-   - This is EXPECTED and NORMAL behavior------------
-✓ CSRF: 2-5 vulnerable forms found
-✓ XSS: Multiple vulnerabilities detected
-✓ SQLi: SQL injection points found
-✓ Ports: 80, 443 open
-✓ WAF: Not detected or weak
-✓ Risk Score: 75-95 (High)
+   - This is EXPECTED and NORMAL behavior
 
 
 SECURE SITE (google.com):

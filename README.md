@@ -5,7 +5,8 @@ A comprehensive web security analysis tool that performs automated reconnaissanc
 ## 🚀 Features
 
 - **AI-Powered Security Analysis**: Uses Google Gemini AI to generate contextual security recommendations based on detected vulnerabilities, open ports with versions, and technology stack
-- **Selective Test Execution**: Interactive modal allows you to choose which security tests to run (XSS, SQL Injection, Port Scanning, WAF Detection, Technology Detection, WHOIS Lookup, AI Analysis)
+- **Selective Test Execution**: Interactive modal allows you to choose which security tests to run (XSS, SQL Injection, CSRF Detection, Port Scanning, WAF Detection, Technology Detection, WHOIS Lookup, AI Analysis)
+- **CSRF Detection**: Detects missing CSRF tokens in forms, identifies vulnerable endpoints, and provides detailed vulnerability reports with form analysis
 - **SQL Injection Scanning**: Tests for SQL injection vulnerabilities using 5 optimized payloads targeting basic injection points
 - **XSS Vulnerability Scanning**: Tests for Cross-Site Scripting vulnerabilities using optimized payloads across forms and URL parameters
 - **Technology Detection**: Automatically identifies frontend frameworks (React, Angular, Vue), backend technologies (Django, Node.js, WordPress), CSS frameworks, and server software with version detection
@@ -118,6 +119,7 @@ The frontend will start on `http://localhost:5173` (or another available port)
    - ✅ **Technology Detection** - Identify web technologies and frameworks
    - ✅ **XSS Vulnerability Test** - Test for Cross-Site Scripting attacks
    - ✅ **SQL Injection Test** - Test for SQL injection vulnerabilities
+   - ✅ **CSRF Detection** - Test for Cross-Site Request Forgery vulnerabilities
    - ✅ **WHOIS Lookup** - Get domain registration information
    - ✅ **AI Analysis** - Generate AI-powered security recommendations (requires Gemini API key)
    
@@ -132,6 +134,7 @@ The frontend will start on `http://localhost:5173` (or another available port)
    - Technology stack identification (if selected)
    - XSS vulnerability testing (if selected)
    - SQL injection testing (if selected)
+   - CSRF detection (if selected)
    - WHOIS lookup (if selected)
    - AI-powered analysis (if selected - runs after all scans complete)
 
@@ -141,6 +144,7 @@ The frontend will start on `http://localhost:5173` (or another available port)
    - Detected technologies by category (if scanned)
    - XSS vulnerability status with attack details (if scanned)
    - SQL injection vulnerability status with payload details (if scanned)
+   - CSRF vulnerability status with form analysis (if scanned)
    - WHOIS information (if scanned)
    - AI-generated risk assessment and recommendations (if AI analysis selected)
 
@@ -157,6 +161,7 @@ Performs comprehensive security analysis on a target URL with optional selective
   "tests": {
     "xss": true,
     "sqli": true,
+    "csrf": true,
     "ports": true,
     "waf": true,
     "tech": true,
@@ -205,6 +210,11 @@ Performs comprehensive security analysis on a target URL with optional selective
     "vulnerable": true,
     "total_vulnerabilities": 2,
     "vulnerabilities": [...]
+  },
+  "csrf_scan": {
+    "vulnerable": true,
+    "total_vulnerabilities": 3,
+    "vulnerable_forms": [...]
   },
   "whois": {
     "domain_name": "example.com",
@@ -264,6 +274,7 @@ Performs SQL injection vulnerability scan on a target URL.
 │   ├── tech_detector.py       # Technology fingerprinting module
 │   ├── xss_scanner.py         # XSS vulnerability scanner
 │   ├── sqli_scanner.py        # SQL injection vulnerability scanner
+│   ├── csrf_scanner.py        # CSRF vulnerability detection module
 │   ├── whois_lookup.py        # WHOIS domain information retrieval
 │   ├── ai_analyzer.py         # AI-powered security analysis using Gemini
 │   ├── requirements.txt       # Python dependencies
@@ -284,7 +295,8 @@ Performs SQL injection vulnerability scan on a target URL.
 │   │   │   ├── RiskAssessment.jsx         # Security risk summary
 │   │   │   ├── IssuesRecommendations.jsx  # Security recommendations
 │   │   │   ├── XSSVulnerability.jsx       # XSS scan results
-│   │   │   └── SQLInjection.jsx           # SQL injection scan results
+│   │   │   ├── SQLInjection.jsx           # SQL injection scan results
+│   │   │   └── CSRFDetection.jsx          # CSRF detection results
 │   │   └── services/
 │   │       └── api.js                     # API client
 │   ├── package.json
@@ -329,6 +341,15 @@ Tests for SQL injection vulnerabilities using:
 - Form input testing
 - Error-based detection
 - Optimized for speed and accuracy
+
+### CSRF Detection
+Tests for Cross-Site Request Forgery vulnerabilities using:
+- Form analysis for CSRF tokens
+- HTTP header inspection
+- Cookie security validation
+- POST request analysis
+- Form action verification
+- Comprehensive vulnerability reporting
 
 ## ⚠️ Performance Optimizations
 
@@ -382,8 +403,9 @@ WebReconX follows a modular architecture for better maintainability and scalabil
 4. **tech_detector.py**: Technology stack fingerprinting
 5. **xss_scanner.py**: XSS vulnerability testing with optimized payloads
 6. **sqli_scanner.py**: SQL injection vulnerability testing with 5 basic payloads
-7. **whois_lookup.py**: Domain registration information retrieval
-8. **ai_analyzer.py**: AI-powered security analysis using Google Gemini - generates contextual recommendations based on actual scan results (open ports with versions, detected technologies, XSS/SQLi findings, WAF status)
+7. **csrf_scanner.py**: CSRF vulnerability detection with form and token analysis
+8. **whois_lookup.py**: Domain registration information retrieval
+9. **ai_analyzer.py**: AI-powered security analysis using Google Gemini - generates contextual recommendations based on actual scan results (open ports with versions, detected technologies, XSS/SQLi/CSRF findings, WAF status)
 
 Each module is self-contained and can be tested independently, making the codebase easier to maintain and extend.
 
