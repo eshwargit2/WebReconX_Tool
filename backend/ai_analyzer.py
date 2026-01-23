@@ -117,6 +117,11 @@ class AIAnalyzer:
         sqli_scan = scan_data.get('sqli_scan', {})
         whois_data = scan_data.get('whois_info', {})
         
+        # Debug: Print what we received
+        print(f"[AI PROMPT DEBUG] XSS vulnerabilities: {xss_scan.get('total_vulnerabilities', 0)}")
+        print(f"[AI PROMPT DEBUG] SQLi vulnerabilities: {sqli_scan.get('total_vulnerabilities', 0)}")
+        print(f"[AI PROMPT DEBUG] SQLi vulnerable params: {sqli_scan.get('vulnerable_params', [])}")
+        
         # Build detailed port information with services and versions
         port_details = []
         for p in open_ports:
@@ -152,14 +157,20 @@ class AIAnalyzer:
         
         # Build vulnerability details
         xss_details = []
-        if xss_scan.get('vulnerable') and xss_scan.get('vulnerabilities'):
+        xss_count = xss_scan.get('total_vulnerabilities', 0)
+        if xss_count > 0 and xss_scan.get('vulnerabilities'):
             for vuln in xss_scan.get('vulnerabilities', [])[:3]:  # Top 3 XSS issues
                 xss_details.append(f"{vuln.get('parameter', 'unknown')} - {vuln.get('payload', '')[:50]}")
         
         sqli_details = []
-        if sqli_scan.get('vulnerable') and sqli_scan.get('vulnerabilities'):
+        sqli_count = sqli_scan.get('total_vulnerabilities', 0)
+        sqli_params = sqli_scan.get('vulnerable_params', [])
+        if sqli_count > 0 and sqli_scan.get('vulnerabilities'):
             for vuln in sqli_scan.get('vulnerabilities', [])[:3]:  # Top 3 SQLi issues
-                sqli_details.append(f"{vuln.get('parameter', 'unknown')} - {vuln.get('error_type', 'unknown')}")
+                vuln_type = vuln.get('type', 'SQL Injection')
+                param = vuln.get('param', vuln.get('parameter', 'unknown'))
+                evidence = vuln.get('evidence', '')
+                sqli_details.append(f"{param} - {vuln_type} ({evidence[:50]})")
         
         prompt = f"""You are a cybersecurity expert analyzing a web security scan. Provide a detailed security analysis in JSON format based ONLY on the actual scan results below.
 
@@ -177,21 +188,39 @@ DETAILED SCAN RESULTS:
 {chr(10).join(['   - ' + td for td in tech_details[:8]]) if tech_details else '   No technologies detected'}
 
 4. XSS VULNERABILITIES:
-   {'✓ VULNERABLE - ' + str(xss_scan.get('total_vulnerabilities', 0)) + ' vulnerabilities found' if xss_scan.get('vulnerable') else '✗ NO XSS FOUND'}
+   {f'✓ VULNERABLE - {xss_count} vulnerabilities found' if xss_count > 0 else '✗ NO XSS VULNERABILITIES DETECTED'}
 {chr(10).join(['   - ' + xd for xd in xss_details]) if xss_details else ''}
 
 5. SQL INJECTION VULNERABILITIES:
-   {'✓ VULNERABLE - ' + str(sqli_scan.get('total_vulnerabilities', 0)) + ' vulnerabilities found' if sqli_scan.get('vulnerable') else '✗ NO SQLi FOUND'}
+   {f'✓✓✓ CRITICAL - {sqli_count} SQL INJECTION VULNERABILITIES FOUND ✓✓✓' if sqli_count > 0 else '✗ NO SQLi VULNERABILITIES DETECTED'}
 {chr(10).join(['   - ' + sd for sd in sqli_details]) if sqli_details else ''}
+{f'   - Vulnerable parameters: {", ".join(sqli_params)}' if sqli_params else ''}
+
+CRITICAL ANALYSIS REQUIREMENTS:
+- HIGHEST PRIORITY: If SQL INJECTION found (count > 0), this is a CRITICAL vulnerability
+- SQL Injection = Database compromise, data theft, authentication bypass
+- If SQLi count > 0: risk_level MUST be "Critical", risk_score MUST be 85-100
+- If SQLi found: MUST include "SQL Injection Attack" in most_likely_attacks with "High" probability
+- If SQLi found: MUST add SQLi vulnerability details to vulnerabilities array
+- XSS is less severe than SQLi - prioritize SQLi in risk assessment
 
 IMPORTANT INSTRUCTIONS:
-- Base ALL recommendations on ACTUAL findings
+- Base ALL analysis on the ACTUAL scan results shown above
+- **SQL INJECTION IS THE MOST CRITICAL VULNERABILITY** - If found, it MUST dominate the analysis
+- If SQLi vulnerabilities found (count > 0): risk_level = "Critical", risk_score = 90-100
+- If XSS or SQLi vulnerabilities are DETECTED (count > 0), they MUST be mentioned in your analysis
+- If WAF is NOT DETECTED, highlight this as a security risk
+- If XSS found: risk_level should be at least "High", add XSS-related attacks to most_likely_attacks
+- If SQLi found: risk_level should be "Critical", add "SQL Injection" as first attack in most_likely_attacks
+- If NO WAF + vulnerabilities found: risk_level should be "Critical"
 - Keep descriptions concise and actionable (under 150 chars)
 - If WAF DETECTED, do NOT recommend adding WAF
-- Focus on critical findings first
+- Focus on SQLI first if found, then XSS, then other issues
 - Limit port_analysis to 5 ports max
 - Limit vulnerabilities to 5 items max
 - Limit recommendations to 5 items max
+- Do NOT say "no vulnerabilities" if XSS or SQLi count > 0
+- SQL Injection summary MUST mention specific vulnerable parameters if found
 
 Provide JSON response:
 {{
@@ -238,6 +267,12 @@ Provide JSON response:
 
 Provide ONLY valid JSON, no markdown formatting or explanations."""
 
+        # Debug: Print key parts of the prompt
+        print(f"\n[AI PROMPT] XSS Section: {f'VULNERABLE - {xss_count} vulnerabilities' if xss_count > 0 else 'NO XSS DETECTED'}")
+        print(f"[AI PROMPT] SQLi Section: {f'CRITICAL - {sqli_count} vulnerabilities' if sqli_count > 0 else 'NO SQLi DETECTED'}")
+        if sqli_params:
+            print(f"[AI PROMPT] SQLi Params: {sqli_params}")
+        
         return prompt
     
     def _build_simplified_prompt(self, scan_data):

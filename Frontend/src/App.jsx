@@ -67,20 +67,8 @@ function App() {
       
       setScanProgress(95) // Show near completion before final API response
       
-      // Pass selected tests to backend - AI analysis happens after all scans
+      // Pass selected tests to backend - AI analysis happens after all scans (including SQLi)
       const data = await analyzeWebsite(url, selectedTestsFromModal)
-      
-      // Run SQL injection scan if selected (separate endpoint)
-      if (selectedTestsFromModal.sqli) {
-        setCurrentOperation('Testing SQL injection')
-        setScanProgress(97)
-        try {
-          const sqliData = await scanSQLInjection(url)
-          data.sqli_scan = sqliData.sqli_scan
-        } catch (sqliErr) {
-          console.error('SQL injection scan error:', sqliErr)
-        }
-      }
       
       setScanProgress(100)
       setAnalysisData(data)

@@ -92,9 +92,15 @@ class SQLiScanner:
         """Detect SQL injection based on response differences"""
         vulnerability_info = None
         
-        # Check for SQL error messages (most reliable)
+        # Debug logging
+        print(f"    [DEBUG] Baseline: status={response1.status_code}, length={len(response1.text)}")
+        print(f"    [DEBUG] Payload response: status={response2.status_code}, length={len(response2.text)}")
+        print(f"    [DEBUG] Difference: {len(response2.text) - len(response1.text)} bytes")
+        
+        # Check for SQL error messages (most reliable) - these are HIGH confidence
         for pattern in self.error_patterns:
             if re.search(pattern, response2.text, re.IGNORECASE):
+                print(f"    [DEBUG] ✓ SQL error pattern matched: {pattern}")
                 vulnerability_info = {
                     'type': 'Error-based SQL Injection',
                     'param': param,
@@ -105,21 +111,32 @@ class SQLiScanner:
                 }
                 break
         
-        # Check for single quote errors (syntax errors)
+        # Check for single quote errors (syntax errors) - must be SQL-specific
         if not vulnerability_info and payload == "'":
-            common_errors = ['syntax', 'sql', 'mysql', 'error', 'warning', 'unexpected']
+            # More specific SQL-related error keywords
+            sql_specific_errors = ['syntax.*sql', 'mysql', 'postgresql', 'ora-\d+', 'sqlite', 
+                                  'sql server', 'odbc', 'jdbc', 'unterminated.*quote', 'quoted string',
+                                  'sql.*error', 'database.*error', 'warning.*mysql', 'pg_query']
             response_lower = response2.text.lower()
-            if any(error in response_lower for error in common_errors):
-                # Check if response is significantly different from baseline
-                if response2.status_code != response1.status_code or abs(len(response2.text) - len(response1.text)) > 100:
-                    vulnerability_info = {
-                        'type': 'Error-based SQL Injection',
-                        'param': param,
-                        'payload': payload,
-                        'url': url,
-                        'evidence': 'Syntax error detected with single quote',
-                        'confidence': 'High'
-                    }
+            
+            # Check for SQL-specific errors
+            sql_error_found = any(re.search(pattern, response_lower) for pattern in sql_specific_errors)
+            status_changed = response2.status_code != response1.status_code
+            content_changed = abs(len(response2.text) - len(response1.text)) > 20
+            
+            print(f"    [DEBUG] Single quote test: sql_error={sql_error_found}, status_changed={status_changed}, content_changed={content_changed}")
+            
+            # Either SQL error OR both status and content changes
+            if sql_error_found or (status_changed and content_changed):
+                print(f"    [DEBUG] ✓ Single quote vulnerability detected")
+                vulnerability_info = {
+                    'type': 'Error-based SQL Injection',
+                    'param': param,
+                    'payload': payload,
+                    'url': url,
+                    'evidence': f'SQL syntax error detected with single quote (status: {response2.status_code})',
+                    'confidence': 'High'
+                }
         
         # Check for content-based SQLi (page differences)
         if not vulnerability_info:
@@ -128,26 +145,32 @@ class SQLiScanner:
             # Check for boolean-based blind SQLi
             if "OR '1'='1" in payload or "OR 1=1" in payload:
                 # True condition should return more content
-                if len(response2.text) > len(response1.text) + 50:
+                if len(response2.text) > len(response1.text) + 30:
+                    print(f"    [DEBUG] ✓ Boolean-based SQLi detected (OR true condition)")
                     vulnerability_info = {
                         'type': 'Boolean-based Blind SQL Injection',
                         'param': param,
                         'payload': payload,
                         'url': url,
-                        'evidence': f'Always-true condition returned {len_diff} more bytes',
+                        'evidence': f'Always-true condition returned {len_diff} more bytes (baseline: {len(response1.text)}, vuln: {len(response2.text)})',
                         'confidence': 'Medium'
                     }
+                else:
+                    print(f"    [DEBUG] OR true: difference too small ({len(response2.text) - len(response1.text)} bytes)")
             elif "AND 1=2" in payload or "AND '1'='2" in payload:
-                # False condition should return less content
-                if len(response2.text) < len(response1.text) - 50:
+                # False condition should return less content  
+                if len(response2.text) < len(response1.text) - 30:
+                    print(f"    [DEBUG] ✓ Boolean-based SQLi detected (AND false condition)")
                     vulnerability_info = {
                         'type': 'Boolean-based Blind SQL Injection',
                         'param': param,
                         'payload': payload,
                         'url': url,
-                        'evidence': f'Always-false condition returned {len_diff} fewer bytes',
+                        'evidence': f'Always-false condition returned {len_diff} fewer bytes (baseline: {len(response1.text)}, vuln: {len(response2.text)})',
                         'confidence': 'Medium'
                     }
+                else:
+                    print(f"    [DEBUG] AND false: difference too small ({len(response2.text) - len(response1.text)} bytes)")
             # Check for ORDER BY column enumeration
             elif "ORDER BY" in payload:
                 if "ORDER BY 100" in payload:
@@ -158,7 +181,7 @@ class SQLiScanner:
                             'param': param,
                             'payload': payload,
                             'url': url,
-                            'evidence': 'ORDER BY clause accepted - column enumeration possible',
+                            'evidence': f'ORDER BY clause modification caused changes (diff: {len_diff} bytes)',
                             'confidence': 'Medium'
                         }
         
@@ -174,9 +197,9 @@ class SQLiScanner:
                     'confidence': 'High'
                 }
         
-        # Check for union-based injection (different content length or structure)
+        # Check for union-based injection
         if not vulnerability_info and 'UNION' in payload.upper():
-            if abs(len(response2.text) - len(response1.text)) > 100:  # Significant difference
+            if abs(len(response2.text) - len(response1.text)) > 150:  # Balanced threshold
                 vulnerability_info = {
                     'type': 'Union-based SQL Injection',
                     'param': param,
@@ -196,6 +219,19 @@ class SQLiScanner:
         from urllib.parse import urlparse, parse_qs
         parsed_url = urlparse(url)
         existing_params = parse_qs(parsed_url.query)
+        
+        # Skip major sites that are unlikely to be vulnerable
+        domain = parsed_url.netloc.lower()
+        major_sites = ['google.com', 'facebook.com', 'youtube.com', 'twitter.com', 'instagram.com', 
+                      'amazon.com', 'microsoft.com', 'apple.com', 'linkedin.com', 'reddit.com']
+        if any(site in domain for site in major_sites):
+            print(f"[*] Skipping {domain} - major website unlikely to have SQLi vulnerabilities")
+            return []
+        
+        # If no parameters in URL and no specific param provided, skip
+        if not existing_params and not param_name:
+            print("[*] No parameters found in URL. SQLi testing requires URL parameters.")
+            return []
         
         # Get baseline response (try multiple times for consistency)
         try:
@@ -229,9 +265,17 @@ class SQLiScanner:
                 try:
                     print(f"[*] Testing payload {i}/{len(payloads)}: {payload[:50]}...")
                     
-                    # Send request with payload
-                    start_time = time.time()
-                    response = self.session.get(url, params={param: payload}, timeout=10, allow_redirects=True)
+                    # Build URL with modified parameter
+                    if existing_params and param in existing_params:
+                        # Replace existing parameter value with payload
+                        test_params_dict = {k: v[0] if isinstance(v, list) else v for k, v in existing_params.items()}
+                        test_params_dict[param] = payload
+                        response = self.session.get(parsed_url.scheme + '://' + parsed_url.netloc + parsed_url.path, 
+                                                   params=test_params_dict, timeout=10, allow_redirects=True)
+                    else:
+                        # Add new parameter
+                        response = self.session.get(url, params={param: payload}, timeout=10, allow_redirects=True)
+                    
                     print(f"    Response: {response.status_code}, Length: {len(response.text)} bytes")
                     
                     # Detect vulnerability

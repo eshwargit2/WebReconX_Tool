@@ -59,19 +59,22 @@ def analyze_website():
                 'message': 'URL is required'
             }), 400
         
-        # Remove http:// or https:// if present
-        url = url.replace('http://', '').replace('https://', '').split('/')[0]
+        # Store the full URL for scanning
+        full_url = url
         
-        # Get IP address
+        # Extract hostname for IP resolution (remove protocol and path)
+        hostname = url.replace('http://', '').replace('https://', '').split('/')[0].split('?')[0]
+        
+        # Get IP address from hostname
         try:
-            ip_address = socket.gethostbyname(url)
+            ip_address = socket.gethostbyname(hostname)
         except socket.gaierror:
             return jsonify({
                 'status': 'error',
-                'message': f'Could not resolve hostname: {url}'
+                'message': f'Could not resolve hostname: {hostname}'
             }), 400
         
-        print(f"Scanning {url} ({ip_address})...")
+        print(f"Scanning {full_url} ({ip_address})...")
         print(f"Selected tests: {selected_tests}")
         
         # Initialize results
@@ -84,8 +87,8 @@ def analyze_website():
         
         # WHOIS Lookup (if selected)
         if selected_tests.get('whois', True):
-            print(f"[*] Performing WHOIS lookup for {url}...")
-            whois_info = perform_whois_lookup(url)
+            print(f"[*] Performing WHOIS lookup for {hostname}...")
+            whois_info = perform_whois_lookup(hostname)
         else:
             print("[*] WHOIS lookup skipped")
         
@@ -101,15 +104,15 @@ def analyze_website():
         
         # Detect technologies (if selected)
         if selected_tests.get('tech', True):
-            print(f"[*] Detecting technologies for {url}...")
-            technologies = detect_technologies(url)
+            print(f"[*] Detecting technologies for {hostname}...")
+            technologies = detect_technologies(hostname)
         else:
             print("[*] Technology detection skipped")
         
         # Detect WAF (if selected)
         if selected_tests.get('waf', True):
-            print(f"[*] Detecting WAF for {url}...")
-            waf_info = detect_waf(url)
+            print(f"[*] Detecting WAF for {hostname}...")
+            waf_info = detect_waf(hostname)
         else:
             print("[*] WAF detection skipped")
         
@@ -127,6 +130,24 @@ def analyze_website():
             print("[*] XSS scanning skipped")
             xss_results = {'total_vulnerabilities': 0, 'tested_payloads': 0}
         
+        # Scan for SQL injection vulnerabilities (if selected) - BEFORE AI analysis
+        if selected_tests.get('sqli', False):
+            print(f"[*] Scanning for SQL injection on {full_url}...")
+            
+            # Ensure URL has proper protocol
+            if not full_url.startswith(('http://', 'https://')):
+                test_url = f"http://{full_url}"
+            else:
+                test_url = full_url
+            
+            # Initialize and run SQLi scanner
+            sqli_scanner = SQLiScanner()
+            sqli_results = sqli_scanner.scan_for_api(test_url, param_name=None, method='GET')
+            print(f"[*] SQLi scan completed: {sqli_results.get('total_vulnerabilities', 0)} vulnerabilities found")
+        else:
+            print("[*] SQL injection scanning skipped")
+            sqli_results = {'total_vulnerabilities': 0, 'vulnerabilities': [], 'vulnerable_params': []}
+        
         # Get hostname
         try:
             hostname = socket.gethostbyaddr(ip_address)[0]
@@ -141,7 +162,10 @@ def analyze_website():
             risk_score += 10
         
         if xss_results.get('total_vulnerabilities', 0) > 0:
-            risk_score += 20
+            risk_score += 15
+        
+        if sqli_results.get('total_vulnerabilities', 0) > 0:
+            risk_score += 25  # SQLi is more critical
         
         if not waf_info['detected']:
             risk_score += 10
@@ -150,7 +174,7 @@ def analyze_website():
         
         analysis_result = {
             'status': 'success',
-            'url': url,
+            'url': full_url,
             'ip_address': ip_address,
             'hostname': hostname,
             'open_ports': open_ports,
@@ -161,10 +185,10 @@ def analyze_website():
             'xss_scan': xss_results,
             'sqli_scan': sqli_results,
             'scan_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'message': f'Analysis completed for {url}',
+            'message': f'Analysis completed for {full_url}',
             'data': {
                 'risk_score': risk_score,
-                'vulnerabilities_found': len(open_ports) + xss_results.get('total_vulnerabilities', 0),
+                'vulnerabilities_found': len(open_ports) + xss_results.get('total_vulnerabilities', 0) + sqli_results.get('total_vulnerabilities', 0),
                 'scan_date': datetime.now().strftime('%Y-%m-%d')
             }
         }
