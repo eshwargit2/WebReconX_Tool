@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Header from "./components/Header"
 import SearchSection from "./components/SearchSection"
 import Dashboard from "./components/Dashboard"
@@ -11,6 +11,8 @@ import SQLInjectionTester from "./components/SQLInjectionTester"
 import ScanOptionsModal from "./components/ScanOptionsModal"
 import WhoisInfo from "./components/WhoisInfo"
 import DirectoryScan from "./components/DirectoryScan"
+import Documentation from "./components/Documentation"
+import About from "./components/About"
 
 import { analyzeWebsite, scanXSSVulnerability, scanSQLInjection } from "./services/api"
 
@@ -25,6 +27,25 @@ function App() {
   const [pendingUrl, setPendingUrl] = useState('')
   const [selectedTests, setSelectedTests] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [currentPage, setCurrentPage] = useState('home')
+
+  // Handle hash changes for navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1)
+      if (hash === 'documentation') {
+        setCurrentPage('documentation')
+      } else if (hash === 'about') {
+        setCurrentPage('about')
+      } else {
+        setCurrentPage('home')
+      }
+    }
+
+    handleHashChange()
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
   
 
   const handleAnalyze = async (url) => {
@@ -99,8 +120,19 @@ function App() {
         url={pendingUrl}
       />
       <Header onSidebarToggle={setSidebarOpen} />
-      {/* Main content with sidebar offset */}
-      <main className={`transition-all duration-300 px-4 py-8 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'}`}>
+      
+      {/* Conditional rendering based on current page */}
+      {currentPage === 'documentation' ? (
+        <main className={`transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'}`}>
+          <Documentation />
+        </main>
+      ) : currentPage === 'about' ? (
+        <main className={`transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'}`}>
+          <About />
+        </main>
+      ) : (
+        /* Main content with sidebar offset */
+        <main className={`transition-all duration-300 px-4 py-8 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'}`}>
         <div className="container mx-auto">
           <SearchSection 
             onAnalyze={handleAnalyze} 
@@ -158,6 +190,7 @@ function App() {
         )}
         </div>
       </main>
+      )}
     </div>
   )
 }

@@ -107,14 +107,16 @@ export default function Header({ onSidebarToggle }) {
           {/* Main Menu */}
           <div className="space-y-2 mb-6">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-3">Main Menu</p>
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 transition group">
+            <a href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 transition group">
               <Home size={20} className="group-hover:scale-110 transition-transform" />
               <span className="font-medium">Home</span>
             </a>
+            
             <a href="#history" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 transition group">
               <FileText size={20} className="group-hover:scale-110 transition-transform" />
               <span className="font-medium">Report History</span>
             </a>
+           
           </div>
 
           {/* Scan Sections */}
@@ -135,11 +137,11 @@ export default function Header({ onSidebarToggle }) {
 
           {/* Bottom Menu */}
           <div className="mt-auto space-y-2 pt-6 border-t border-slate-700/50">
-            <a href="#docs" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 transition group">
+            <a href="#documentation" onClick={(e) => { e.preventDefault(); window.location.hash = 'documentation'; }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 transition group">
               <BookOpen size={20} className="group-hover:scale-110 transition-transform" />
               <span className="font-medium">Documentation</span>
             </a>
-            <a href="#about" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 transition group">
+            <a href="#about" onClick={(e) => { e.preventDefault(); window.location.hash = 'about'; }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 transition group">
               <Info size={20} className="group-hover:scale-110 transition-transform" />
               <span className="font-medium">About</span>
             </a>
