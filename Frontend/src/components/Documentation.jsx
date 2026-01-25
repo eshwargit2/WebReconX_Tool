@@ -146,6 +146,22 @@ const Documentation = () => {
                 "Contact information"
               ]}
             />
+            
+            <FeatureCard
+              icon={<Shield className="w-6 h-6 text-cyan-400" />}
+              title="Security Headers Analysis"
+              description="Comprehensive HTTP security headers scanner with A-F grading"
+              details={[
+                "8 critical security headers checked",
+                "Content-Security-Policy (CSP)",
+                "Strict-Transport-Security (HSTS)",
+                "X-Frame-Options, X-Content-Type-Options",
+                "Risk level assessment (Critical/High/Medium/Low)",
+                "Detailed remediation recommendations",
+                "META tag policy detection",
+                "Alternative header support"
+              ]}
+            />
           </div>
         </Section>
 

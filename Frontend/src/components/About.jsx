@@ -61,6 +61,10 @@ const About = () => {
               text="WAF Detection"
             />
             <FeatureItem 
+              icon={<Shield className="w-5 h-5 text-cyan-400" />}
+              text="Security Headers Analysis (A-F Grading)"
+            />
+            <FeatureItem 
               icon={<Code className="w-5 h-5 text-yellow-400" />}
               text="Technology Stack Analysis"
             />

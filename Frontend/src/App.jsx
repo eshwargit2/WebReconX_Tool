@@ -13,6 +13,7 @@ import WhoisInfo from "./components/WhoisInfo"
 import DirectoryScan from "./components/DirectoryScan"
 import Documentation from "./components/Documentation"
 import About from "./components/About"
+import SecurityHeaders from "./components/SecurityHeaders"
 
 import { analyzeWebsite, scanXSSVulnerability, scanSQLInjection } from "./services/api"
 
@@ -159,6 +160,17 @@ function App() {
             <div id="website-overview" className="scroll-mt-20">
               <Dashboard data={analysisData} selectedTests={selectedTests} />
             </div>
+            
+            {/* Security Configuration Section */}
+            {selectedTests?.security_headers && analysisData.security_headers && (
+              <div id="security-config" className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-8 scroll-mt-20">
+                <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                  <span className="text-green-400">🛡️</span>
+                  Security Configuration
+                </h2>
+                <SecurityHeaders headersData={analysisData.security_headers} />
+              </div>
+            )}
             
             {/* Reconnaissance & Information Gathering Section */}
             {selectedTests?.directory && analysisData.directory_scan && (

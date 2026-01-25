@@ -25,6 +25,7 @@ from sqli_scanner import SQLiScanner
 from whois_lookup import perform_whois_lookup
 from ai_analyzer import AIAnalyzer
 from directory_scanner import DirectoryScanner
+from security_headers import SecurityHeadersScanner
 
 app = Flask(__name__)
 CORS(app)
@@ -62,7 +63,8 @@ def analyze_website():
             'xss': True,
             'sqli': False,
             'whois': True,
-            'directory': False
+            'directory': False,
+            'security_headers': False
         })
         
         if not url:
@@ -100,6 +102,7 @@ def analyze_website():
         sqli_results = {}
         whois_info = {}
         directory_results = {}
+        security_headers_results = {}
         
         # WHOIS Lookup (if selected)
         if selected_tests.get('whois', True):
@@ -182,6 +185,28 @@ def analyze_website():
             print("[*] Directory scanning skipped")
             directory_results = {'total_directories': 0, 'directories': [], 'categories': {}}
         
+        # Scan security headers (if selected)
+        if selected_tests.get('security_headers', False):
+            print(f"[*] Scanning security headers for {full_url}...")
+            
+            # Ensure URL has proper protocol
+            if not full_url.startswith(('http://', 'https://')):
+                test_url = f"http://{full_url}"
+            else:
+                test_url = full_url
+            
+            # Initialize and run security headers scanner
+            headers_scanner = SecurityHeadersScanner()
+            security_headers_results = headers_scanner.scan_for_api(test_url)
+            
+            if security_headers_results.get('error'):
+                print(f"[!] Security headers scan failed: {security_headers_results.get('message')}")
+            else:
+                print(f"[*] Security headers scan completed: Grade {security_headers_results.get('security_grade')} ({security_headers_results.get('total_score')}/{security_headers_results.get('max_score')})")
+        else:
+            print("[*] Security headers scanning skipped")
+            security_headers_results = {}
+        
         # Get hostname
         try:
             hostname = socket.gethostbyaddr(ip_address)[0]
@@ -228,6 +253,7 @@ def analyze_website():
             'xss_scan': xss_results,
             'sqli_scan': sqli_results,
             'directory_scan': directory_results,
+            'security_headers': security_headers_results,
             'scan_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'message': f'Analysis completed for {full_url}',
             'data': {

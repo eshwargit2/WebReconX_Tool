@@ -99,7 +99,52 @@ TESTING TIP FOR DIRECTORY SCANNING:
 - Results categorized: Admin, Config, Backup, API, Content
 
 
-4. GENERAL VULNERABLE TEST SITES
+4. SECURITY HEADERS ANALYSIS TEST SITES
+-----------------------------------------
+⚠️ IMPORTANT: Security headers can be tested on any website - just enter the domain
+
+WELL-CONFIGURED SITES (Grade A-B):
+https://github.com
+   - ✓ VERIFIED - Grade B (70-80 points)
+   - Good security headers configuration
+   - Missing some headers but has alternatives
+
+https://cloudflare.com
+   - Strong security headers
+   - Content-Security-Policy present
+   - Good HSTS configuration
+
+MISCONFIGURED SITES (Grade D-F):
+https://google.com
+   - Grade F - Missing critical headers
+   - No Content-Security-Policy (uses Report-Only)
+   - Missing HSTS and X-Content-Type-Options
+   - Good example of major sites with gaps
+
+http://testphp.vulnweb.com
+   - Grade F - Poor security headers
+   - Missing most critical headers
+   - Good for testing worst case
+
+HEADERS CHECKED (8 Total):
+✓ X-Frame-Options - Prevents clickjacking
+✓ Content-Security-Policy - Prevents XSS/injection
+✓ Strict-Transport-Security - Enforces HTTPS
+✓ X-Content-Type-Options - Prevents MIME sniffing
+✓ Referrer-Policy - Controls referrer information
+✓ Permissions-Policy - Controls browser features
+✓ X-XSS-Protection - Legacy XSS filter
+✓ Cache-Control - Controls caching behavior
+
+TESTING TIP:
+- Enter any domain (HTTPS or HTTP)
+- Enable "Security Headers Analysis" option
+- Scanner checks both HTTP headers and META tags
+- Results show A-F grade with risk assessment
+- Missing headers show remediation recommendations
+
+
+5. GENERAL VULNERABLE TEST SITES
 ---------------------------------
 http://testphp.vulnweb.com
    - All-in-one vulnerable test site

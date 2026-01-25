@@ -4,8 +4,9 @@ A comprehensive web security analysis tool that performs automated reconnaissanc
 
 ## 🚀 Features
 
-- **AI-Powered Security Analysis**: Uses Google Gemini AI to generate contextual security recommendations based on detected vulnerabilities, open ports with versions, and technology stack
-- **Selective Test Execution**: Interactive modal allows you to choose which security tests to run (XSS, SQL Injection, Port Scanning, WAF Detection, Technology Detection, WHOIS Lookup, AI Analysis)
+- **AI-Powered Security Analysis**: Uses Google Gemini AI to generate contextual security recommendations based on detected vulnerabilities, open ports with versions, technology stack, and security headers configuration
+- **Selective Test Execution**: Interactive modal allows you to choose which security tests to run (XSS, SQL Injection, Port Scanning, WAF Detection, Technology Detection, Security Headers Analysis, WHOIS Lookup, AI Analysis)
+- **Security Headers Analysis**: Comprehensive HTTP security headers scanner checking 8 critical headers (CSP, HSTS, X-Frame-Options, etc.) with A-F grading system, risk assessment, and remediation recommendations
 - **SQL Injection Scanning**: Advanced testing with 13 optimized payloads detecting Error-based, Boolean-based, Union-based, and Time-based SQL injection vulnerabilities
 - **XSS Vulnerability Scanning**: Tests for Cross-Site Scripting vulnerabilities using optimized payloads across forms and URL parameters
 - **Technology Detection**: Automatically identifies frontend frameworks (React, Angular, Vue), backend technologies (Django, Node.js, WordPress), CSS frameworks, and server software with version detection
@@ -122,6 +123,7 @@ The frontend will start on `http://localhost:5173` (or another available port)
    - ✅ **Technology Detection** - Identify web technologies and frameworks
    - ✅ **XSS Vulnerability Test** - Test for Cross-Site Scripting attacks
    - ✅ **SQL Injection Test** - Test for SQL injection vulnerabilities (REQUIRES URL with parameters!)
+   - ✅ **Security Headers Analysis** - Analyze HTTP security headers configuration (CSP, HSTS, X-Frame-Options, etc.) with A-F grading
    - ✅ **WHOIS Lookup** - Get domain registration information
    - ✅ **AI Analysis** - Generate AI-powered security recommendations (requires Gemini API key)
    
@@ -136,6 +138,7 @@ The frontend will start on `http://localhost:5173` (or another available port)
    - Technology stack identification (if selected)
    - XSS vulnerability testing (if selected)
    - SQL injection testing (if selected) - scans URL parameters for vulnerabilities
+   - Security headers analysis (if selected) - checks 8 critical HTTP security headers
    - WHOIS lookup (if selected)
    - AI-powered analysis (if selected - runs after all scans complete)
 
@@ -145,6 +148,7 @@ The frontend will start on `http://localhost:5173` (or another available port)
    - Detected technologies by category (if scanned)
    - XSS vulnerability status with attack details (if scanned)
    - SQL injection vulnerability status with detailed payload evidence (if scanned)
+   - Security headers configuration with A-F grade (if scanned)
    - WHOIS information (if scanned)
    - AI-generated risk assessment and recommendations (if AI analysis selected)
 
@@ -164,6 +168,7 @@ Performs comprehensive security analysis on a target URL with optional selective
     "ports": true,
     "waf": true,
     "tech": true,
+    "security_headers": true,
     "whois": true,
     "ai_analysis": true
   }
@@ -209,6 +214,25 @@ Performs comprehensive security analysis on a target URL with optional selective
     "vulnerable": true,
     "total_vulnerabilities": 2,
     "vulnerabilities": [...]
+  },
+  "security_headers": {
+    "security_grade": "B",
+    "total_score": 70,
+    "max_score": 80,
+    "headers_found": [
+      {
+        "header": "X-Frame-Options",
+        "value": "SAMEORIGIN",
+        "source": "HTTP"
+      }
+    ],
+    "headers_missing": [
+      {
+        "header": "Content-Security-Policy",
+        "risk_level": "High",
+        "recommendation": "Add CSP header to prevent XSS attacks"
+      }
+    ]
   },
   "whois": {
     "domain_name": "example.com",

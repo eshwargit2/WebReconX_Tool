@@ -116,11 +116,17 @@ class AIAnalyzer:
         xss_scan = scan_data.get('xss_scan', {})
         sqli_scan = scan_data.get('sqli_scan', {})
         whois_data = scan_data.get('whois_info', {})
+        security_headers = scan_data.get('security_headers', {})
         
         # Debug: Print what we received
         print(f"[AI PROMPT DEBUG] XSS vulnerabilities: {xss_scan.get('total_vulnerabilities', 0)}")
         print(f"[AI PROMPT DEBUG] SQLi vulnerabilities: {sqli_scan.get('total_vulnerabilities', 0)}")
         print(f"[AI PROMPT DEBUG] SQLi vulnerable params: {sqli_scan.get('vulnerable_params', [])}")
+        if security_headers:
+            sec_score = security_headers.get('total_score', 0)
+            sec_max = security_headers.get('max_score', 80)
+            sec_pct = int((sec_score / sec_max * 100)) if sec_max > 0 else 0
+            print(f"[AI PROMPT DEBUG] Security Headers: Grade {security_headers.get('security_grade', 'N/A')}, Score: {sec_score}/{sec_max} ({sec_pct}%)")
         
         # Build detailed port information with services and versions
         port_details = []
@@ -196,6 +202,12 @@ DETAILED SCAN RESULTS:
 {chr(10).join(['   - ' + sd for sd in sqli_details]) if sqli_details else ''}
 {f'   - Vulnerable parameters: {", ".join(sqli_params)}' if sqli_params else ''}
 
+6. SECURITY HEADERS CONFIGURATION:
+   Grade: {security_headers.get('security_grade', 'N/A')} | Score: {security_headers.get('total_score', 0)}/{security_headers.get('max_score', 80)} ({int((security_headers.get('total_score', 0) / security_headers.get('max_score', 80)) * 100) if security_headers.get('max_score', 0) > 0 else 0}%)
+   {f'✓ {len(security_headers.get("headers_found", []))} headers present: {", ".join([h.get("header", "") for h in security_headers.get("headers_found", [])[:4]])}' if security_headers.get('headers_found') else ''}
+   {f'✗ {len(security_headers.get("missing_headers", []))} headers missing:' if security_headers.get('missing_headers') else ''}
+{chr(10).join(['   - ' + mh.get('header', 'Unknown') + f' ({mh.get("risk_level", "Unknown")} risk) - ' + mh.get('recommendation', '')[:80] for mh in security_headers.get('missing_headers', [])[:3]]) if security_headers.get('missing_headers') else ''}
+
 CRITICAL ANALYSIS REQUIREMENTS:
 - HIGHEST PRIORITY: If SQL INJECTION found (count > 0), this is a CRITICAL vulnerability
 - SQL Injection = Database compromise, data theft, authentication bypass
@@ -213,9 +225,15 @@ IMPORTANT INSTRUCTIONS:
 - If XSS found: risk_level should be at least "High", add XSS-related attacks to most_likely_attacks
 - If SQLi found: risk_level should be "Critical", add "SQL Injection" as first attack in most_likely_attacks
 - If NO WAF + vulnerabilities found: risk_level should be "Critical"
+- **SECURITY HEADERS**: If grade is F or D (< 60%), mention missing critical headers (CSP, HSTS, X-Frame-Options)
+- Missing critical security headers (CSP, HSTS) = increased risk for XSS, clickjacking, MITM attacks
+- Low security headers grade (F/D) + no WAF = higher overall risk score
+- If missing Content-Security-Policy: mention XSS attack risk increases
+- If missing Strict-Transport-Security: mention MITM attack risk
+- If missing X-Frame-Options: mention clickjacking risk
 - Keep descriptions concise and actionable (under 150 chars)
 - If WAF DETECTED, do NOT recommend adding WAF
-- Focus on SQLI first if found, then XSS, then other issues
+- Focus on SQLI first if found, then XSS, then security headers, then other issues
 - Limit port_analysis to 5 ports max
 - Limit vulnerabilities to 5 items max
 - Limit recommendations to 5 items max
@@ -272,6 +290,11 @@ Provide ONLY valid JSON, no markdown formatting or explanations."""
         print(f"[AI PROMPT] SQLi Section: {f'CRITICAL - {sqli_count} vulnerabilities' if sqli_count > 0 else 'NO SQLi DETECTED'}")
         if sqli_params:
             print(f"[AI PROMPT] SQLi Params: {sqli_params}")
+        if security_headers:
+            sec_score = security_headers.get('total_score', 0)
+            sec_max = security_headers.get('max_score', 80)
+            sec_pct = int((sec_score / sec_max * 100)) if sec_max > 0 else 0
+            print(f"[AI PROMPT] Security Headers: Grade {security_headers.get('security_grade', 'N/A')} - {sec_score}/{sec_max} ({sec_pct}%)")
         
         return prompt
     
@@ -283,6 +306,7 @@ Provide ONLY valid JSON, no markdown formatting or explanations."""
         technologies = scan_data.get('technologies', [])
         xss_scan = scan_data.get('xss_scan', {})
         sqli_scan = scan_data.get('sqli_scan', {})
+        security_headers = scan_data.get('security_headers', {})
         
         # Build concise summary
         port_count = len(open_ports)
@@ -290,6 +314,10 @@ Provide ONLY valid JSON, no markdown formatting or explanations."""
         tech_count = len(technologies) if isinstance(technologies, list) else len(technologies.keys()) if isinstance(technologies, dict) else 0
         xss_status = "Vulnerable" if xss_scan.get('vulnerable') else "Not Detected"
         sqli_status = "Vulnerable" if sqli_scan.get('vulnerable') else "Not Detected"
+        headers_grade = security_headers.get('security_grade', 'N/A')
+        headers_total = security_headers.get('total_score', 0)
+        headers_max = security_headers.get('max_score', 80)
+        headers_pct = int((headers_total / headers_max * 100)) if headers_max > 0 else 0
         
         prompt = f"""Analyze this web security scan for {url}. Provide concise JSON response.
 
@@ -299,6 +327,7 @@ SCAN SUMMARY:
 - Technologies: {tech_count} detected
 - XSS: {xss_status}
 - SQLi: {sqli_status}
+- Security Headers: Grade {headers_grade} ({headers_total}/{headers_max}, {headers_pct}%)
 
 Provide JSON with:
 {{
