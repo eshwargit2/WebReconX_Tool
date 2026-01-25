@@ -13,6 +13,7 @@ const DirectoryScan = ({ directoryData }) => {
   const totalDirs = directoryData.total_directories || 0;
   const directories = directoryData.directories || [];
   const categories = directoryData.categories || {};
+  const katanaDiscovered = directoryData.katana_discovered || 0;
 
   const copyToClipboard = (text, index) => {
     navigator.clipboard.writeText(text);
@@ -169,8 +170,8 @@ const DirectoryScan = ({ directoryData }) => {
                       </div>
                       <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
                         <span>Status: <span className="text-green-400">200 OK</span></span>
-                        <span>Size: <span className="text-slate-300">{formatFileSize(dir.size)}</span></span>
-                        <span className="truncate">Type: {dir.content_type}</span>
+                        {dir.size > 0 && <span>Size: <span className="text-slate-300">{formatFileSize(dir.size)}</span></span>}
+                        {dir.content_type !== 'discovered' && <span className="truncate">Type: {dir.content_type}</span>}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">

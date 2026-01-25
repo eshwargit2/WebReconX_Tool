@@ -1,9 +1,13 @@
 import requests
 import threading
 from queue import Queue
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, parse_qs
 import os
 import urllib3
+import re
+from bs4 import BeautifulSoup
+import subprocess
+import json
 
 # Disable SSL warnings when using verify=False
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -121,6 +125,190 @@ class DirectoryScanner:
             'ebook', 'ebooks', 'pdf', 'whitepaper', 'whitepapers',
             'case-study', 'case-studies', 'webinar', 'webinars'
         ]
+        
+        self.crawled_urls = set()  # Track crawled URLs to avoid duplicates
+        self.discovered_endpoints = set()  # Store discovered endpoints
+    
+    def katana_crawl(self, url):
+        """Katana-style intelligent web crawling to discover endpoints"""
+        print(f"\n[*] Starting Katana-style intelligent crawl...")
+        discovered = set()
+        
+        # 1. Check robots.txt
+        robots_urls = self.check_robots_txt(url)
+        discovered.update(robots_urls)
+        
+        # 2. Check sitemap.xml
+        sitemap_urls = self.check_sitemap(url)
+        discovered.update(sitemap_urls)
+        
+        # 3. Crawl homepage and extract links
+        crawled_urls = self.crawl_and_extract_links(url, max_depth=2)
+        discovered.update(crawled_urls)
+        
+        # 4. Extract JavaScript endpoints
+        js_endpoints = self.extract_js_endpoints(url)
+        discovered.update(js_endpoints)
+        
+        # 5. Check common API endpoints
+        api_endpoints = self.check_api_endpoints(url)
+        discovered.update(api_endpoints)
+        
+        print(f"[*] Katana crawl completed: {len(discovered)} unique endpoints discovered")
+        return list(discovered)
+    
+    def check_robots_txt(self, url):
+        """Parse robots.txt for disallowed paths (often interesting directories)"""
+        discovered = set()
+        parsed = urlparse(url)
+        base_url = f"{parsed.scheme}://{parsed.netloc}"
+        robots_url = urljoin(base_url, '/robots.txt')
+        
+        try:
+            response = self.session.get(robots_url, timeout=3, verify=False)
+            if response.status_code == 200:
+                print(f"[+] Found robots.txt")
+                for line in response.text.split('\n'):
+                    if line.startswith('Disallow:') or line.startswith('Allow:'):
+                        path = line.split(':', 1)[1].strip()
+                        if path and path != '/':
+                            full_url = urljoin(base_url, path)
+                            discovered.add(full_url)
+                            print(f"    [robots.txt] {full_url}")
+        except:
+            pass
+        
+        return discovered
+    
+    def check_sitemap(self, url):
+        """Parse sitemap.xml for URLs"""
+        discovered = set()
+        parsed = urlparse(url)
+        base_url = f"{parsed.scheme}://{parsed.netloc}"
+        
+        sitemap_urls = [
+            '/sitemap.xml', '/sitemap_index.xml', '/sitemap-index.xml',
+            '/sitemap1.xml', '/sitemap.php', '/sitemap/'
+        ]
+        
+        for sitemap_path in sitemap_urls:
+            try:
+                sitemap_url = urljoin(base_url, sitemap_path)
+                response = self.session.get(sitemap_url, timeout=3, verify=False)
+                if response.status_code == 200:
+                    print(f"[+] Found sitemap: {sitemap_url}")
+                    # Extract URLs from XML
+                    urls = re.findall(r'<loc>(.*?)</loc>', response.text)
+                    for found_url in urls[:50]:  # Limit to 50 URLs
+                        discovered.add(found_url)
+                        print(f"    [sitemap] {found_url}")
+                    break
+            except:
+                pass
+        
+        return discovered
+    
+    def crawl_and_extract_links(self, url, max_depth=2):
+        """Crawl website and extract links (Katana-style)"""
+        discovered = set()
+        to_crawl = [(url, 0)]
+        crawled = set()
+        
+        while to_crawl and len(crawled) < 20:  # Limit crawling
+            current_url, depth = to_crawl.pop(0)
+            
+            if current_url in crawled or depth > max_depth:
+                continue
+            
+            crawled.add(current_url)
+            
+            try:
+                response = self.session.get(current_url, timeout=3, verify=False)
+                if response.status_code == 200:
+                    soup = BeautifulSoup(response.text, 'html.parser')
+                    
+                    # Extract links
+                    for link in soup.find_all(['a', 'link'], href=True):
+                        href = link['href']
+                        full_url = urljoin(current_url, href)
+                        
+                        # Only same domain
+                        if urlparse(full_url).netloc == urlparse(url).netloc:
+                            discovered.add(full_url)
+                            if depth < max_depth:
+                                to_crawl.append((full_url, depth + 1))
+                    
+                    # Extract form actions
+                    for form in soup.find_all('form', action=True):
+                        action = form['action']
+                        full_url = urljoin(current_url, action)
+                        discovered.add(full_url)
+                        print(f"    [form] {full_url}")
+            except:
+                pass
+        
+        return discovered
+    
+    def extract_js_endpoints(self, url):
+        """Extract API endpoints from JavaScript files"""
+        discovered = set()
+        
+        try:
+            response = self.session.get(url, timeout=3, verify=False)
+            if response.status_code == 200:
+                # Find JS file URLs
+                js_urls = re.findall(r'<script[^>]+src=["\']([^"\']+)["\']', response.text)
+                
+                for js_url in js_urls[:10]:  # Limit to 10 JS files
+                    full_js_url = urljoin(url, js_url)
+                    try:
+                        js_response = self.session.get(full_js_url, timeout=2, verify=False)
+                        if js_response.status_code == 200:
+                            # Extract API endpoints from JS
+                            api_patterns = [
+                                r'["\']/(api|v\d+|graphql|rest)[^"\']*["\']',
+                                r'["\']https?://[^"\']+/api[^"\']*["\']',
+                                r'endpoint["\']?\s*:\s*["\']([^"\']+)["\']',
+                                r'url["\']?\s*:\s*["\']([^"\']+)["\']'
+                            ]
+                            
+                            for pattern in api_patterns:
+                                matches = re.findall(pattern, js_response.text)
+                                for match in matches[:5]:
+                                    endpoint = match if match.startswith('http') else urljoin(url, match)
+                                    discovered.add(endpoint)
+                                    print(f"    [js-endpoint] {endpoint}")
+                    except:
+                        pass
+        except:
+            pass
+        
+        return discovered
+    
+    def check_api_endpoints(self, url):
+        """Check common API endpoint patterns"""
+        discovered = set()
+        parsed = urlparse(url)
+        base_url = f"{parsed.scheme}://{parsed.netloc}"
+        
+        api_patterns = [
+            '/api', '/api/v1', '/api/v2', '/v1', '/v2', '/graphql',
+            '/rest', '/api/users', '/api/auth', '/api/login',
+            '/api/data', '/api/posts', '/api/products', '/swagger',
+            '/api-docs', '/docs', '/openapi.json', '/api.json'
+        ]
+        
+        for pattern in api_patterns:
+            try:
+                endpoint = urljoin(base_url, pattern)
+                response = self.session.head(endpoint, timeout=2, verify=False, allow_redirects=False)
+                if response.status_code in [200, 301, 302, 401, 403]:
+                    discovered.add(endpoint)
+                    print(f"    [api] {endpoint} [{response.status_code}]")
+            except:
+                pass
+        
+        return discovered
     
     def check_directory(self, base_url, directory, results_queue):
         """Check if a directory exists and returns 200 OK"""
@@ -274,13 +462,44 @@ class DirectoryScanner:
         return self.found_directories
     
     def scan_for_api(self, url):
-        """Simplified scan method for API usage"""
+        """Simplified scan method for API usage with Katana-style crawling"""
+        print(f"\n[*] Starting comprehensive endpoint discovery...")
+        print(f"[*] Phase 1: Katana-style intelligent crawl")
+        
+        # Phase 1: Katana-style intelligent crawl
+        katana_endpoints = self.katana_crawl(url)
+        
+        # Phase 2: Traditional directory brute-force
+        print(f"\n[*] Phase 2: Directory brute-force scan")
         directories = self.scan_directories(url)
+        
+        # Combine results and remove duplicates
+        all_endpoints = set()
+        for endpoint in katana_endpoints:
+            all_endpoints.add(endpoint)
+        for dir_info in directories:
+            all_endpoints.add(dir_info['url'])
+        
+        # Convert Katana endpoints to directory format
+        for endpoint in katana_endpoints:
+            if not any(d['url'] == endpoint for d in directories):
+                parsed = urlparse(endpoint)
+                directories.append({
+                    'path': parsed.path or '/',
+                    'url': endpoint,
+                    'status_code': 200,
+                    'size': 0,
+                    'content_type': 'discovered',
+                    'source': 'katana'
+                })
+        
+        print(f"\n[*] Total unique endpoints discovered: {len(all_endpoints)}")
         
         # Create summary report
         report = {
             'total_directories': len(directories),
             'directories': directories,
+            'katana_discovered': len(katana_endpoints),
             'categories': {
                 'admin': [],
                 'config': [],
