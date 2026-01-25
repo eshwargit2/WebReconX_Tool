@@ -10,6 +10,7 @@ import SQLInjection from "./components/SQLInjection"
 import SQLInjectionTester from "./components/SQLInjectionTester"
 import ScanOptionsModal from "./components/ScanOptionsModal"
 import WhoisInfo from "./components/WhoisInfo"
+import DirectoryScan from "./components/DirectoryScan"
 
 import { analyzeWebsite, scanXSSVulnerability, scanSQLInjection } from "./services/api"
 
@@ -128,7 +129,7 @@ function App() {
             </div>
             
             {/* Vulnerabilities Section */}
-            {((selectedTests?.xss && analysisData.xss_scan) || (selectedTests?.sqli && analysisData.sqli_scan)) && (
+            {((selectedTests?.xss && analysisData.xss_scan) || (selectedTests?.sqli && analysisData.sqli_scan) || (selectedTests?.directory && analysisData.directory_scan)) && (
               <div id="vulnerabilities" className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-8 scroll-mt-20">
                 <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
                   <span className="text-cyan-400">⚡</span>
@@ -139,6 +140,9 @@ function App() {
                 )}
                 {selectedTests?.sqli && analysisData.sqli_scan && (
                   <SQLInjection sqliData={analysisData.sqli_scan} />
+                )}
+                {selectedTests?.directory && analysisData.directory_scan && (
+                  <DirectoryScan directoryData={analysisData.directory_scan} />
                 )}
               </div>
             )}

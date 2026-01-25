@@ -24,6 +24,7 @@ from xss_scanner import scan_xss
 from sqli_scanner import SQLiScanner
 from whois_lookup import perform_whois_lookup
 from ai_analyzer import AIAnalyzer
+from directory_scanner import DirectoryScanner
 
 app = Flask(__name__)
 CORS(app)
@@ -43,21 +44,35 @@ def analyze_website():
     """Analyze website endpoint with selective test execution"""
     try:
         data = request.get_json()
-        url = data.get('url')
+        
+        if not data:
+            print("[ERROR] No JSON data received")
+            return jsonify({
+                'status': 'error',
+                'message': 'No JSON data provided'
+            }), 400
+        
+        print(f"[DEBUG] Received data: {data}")
+        
+        url = data.get('url', '').strip()  # Strip whitespace from URL
         selected_tests = data.get('tests', {
             'ports': True,
             'waf': True,
             'tech': True,
             'xss': True,
-            'sqli': False, 
-            'whois': True
+            'sqli': False,
+            'whois': True,
+            'directory': False
         })
         
         if not url:
+            print("[ERROR] URL is missing from request")
             return jsonify({
                 'status': 'error',
                 'message': 'URL is required'
             }), 400
+        
+        print(f"[DEBUG] Cleaned URL: '{url}'")
         
         # Store the full URL for scanning
         full_url = url
@@ -84,6 +99,7 @@ def analyze_website():
         xss_results = {}
         sqli_results = {}
         whois_info = {}
+        directory_results = {}
         
         # WHOIS Lookup (if selected)
         if selected_tests.get('whois', True):
@@ -148,6 +164,24 @@ def analyze_website():
             print("[*] SQL injection scanning skipped")
             sqli_results = {'total_vulnerabilities': 0, 'vulnerabilities': [], 'vulnerable_params': []}
         
+        # Scan for hidden directories (if selected)
+        if selected_tests.get('directory', False):
+            print(f"[*] Scanning for hidden directories on {full_url}...")
+            
+            # Ensure URL has proper protocol
+            if not full_url.startswith(('http://', 'https://')):
+                test_url = f"http://{full_url}"
+            else:
+                test_url = full_url
+            
+            # Initialize and run directory scanner
+            dir_scanner = DirectoryScanner()
+            directory_results = dir_scanner.scan_for_api(test_url)
+            print(f"[*] Directory scan completed: {directory_results.get('total_directories', 0)} directories found")
+        else:
+            print("[*] Directory scanning skipped")
+            directory_results = {'total_directories': 0, 'directories': [], 'categories': {}}
+        
         # Get hostname
         try:
             hostname = socket.gethostbyaddr(ip_address)[0]
@@ -167,6 +201,15 @@ def analyze_website():
         if sqli_results.get('total_vulnerabilities', 0) > 0:
             risk_score += 25  # SQLi is more critical
         
+        if directory_results.get('total_directories', 0) > 0:
+            # Add risk based on sensitive directories found
+            admin_dirs = len(directory_results.get('categories', {}).get('admin', []))
+            config_dirs = len(directory_results.get('categories', {}).get('config', []))
+            if admin_dirs > 0 or config_dirs > 0:
+                risk_score += 20  # Exposed admin/config directories are critical
+            elif directory_results.get('total_directories', 0) > 5:
+                risk_score += 10  # Many exposed directories increase attack surface
+        
         if not waf_info['detected']:
             risk_score += 10
         
@@ -184,11 +227,12 @@ def analyze_website():
             'whois': whois_info,
             'xss_scan': xss_results,
             'sqli_scan': sqli_results,
+            'directory_scan': directory_results,
             'scan_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'message': f'Analysis completed for {full_url}',
             'data': {
                 'risk_score': risk_score,
-                'vulnerabilities_found': len(open_ports) + xss_results.get('total_vulnerabilities', 0) + sqli_results.get('total_vulnerabilities', 0),
+                'vulnerabilities_found': len(open_ports) + xss_results.get('total_vulnerabilities', 0) + sqli_results.get('total_vulnerabilities', 0) + directory_results.get('total_directories', 0),
                 'scan_date': datetime.now().strftime('%Y-%m-%d')
             }
         }
@@ -275,10 +319,14 @@ def analyze_website():
         return jsonify(analysis_result), 200
         
     except Exception as e:
-        print(f"Error: {str(e)}")
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"[ERROR] Exception in analyze_website:")
+        print(error_trace)
         return jsonify({
             'status': 'error',
-            'message': str(e)
+            'message': str(e),
+            'trace': error_trace
         }), 500
 
 

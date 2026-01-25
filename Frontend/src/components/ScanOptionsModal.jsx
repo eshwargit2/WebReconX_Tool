@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Shield, Bug, Database, CheckCircle, Globe } from 'lucide-react';
+import { X, Shield, Bug, Database, CheckCircle, Globe, FolderOpen } from 'lucide-react';
 
 const ScanOptionsModal = ({ isOpen, onClose, onConfirm, url }) => {
   const [selectedTests, setSelectedTests] = useState({
@@ -9,6 +9,7 @@ const ScanOptionsModal = ({ isOpen, onClose, onConfirm, url }) => {
     waf: true,
     tech: true,
     whois: true,
+    directory: false,
     ai_analysis: true  // Enable AI analysis by default
   });
 
@@ -72,6 +73,14 @@ const ScanOptionsModal = ({ isOpen, onClose, onConfirm, url }) => {
       description: 'Test for SQL injection vulnerabilities',
       icon: Database,
       color: 'red',
+      recommended: false
+    },
+    {
+      id: 'directory',
+      name: 'Directory Enumeration',
+      description: 'Scan for exposed directories (200 OK status)',
+      icon: FolderOpen,
+      color: 'yellow',
       recommended: false
     }
   ];

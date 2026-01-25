@@ -50,7 +50,7 @@ class XSSScanner:
         try:
             # Ensure URL has proper protocol
             if not url.startswith(('http://', 'https://')):
-                url = 'http://' + url
+                url = 'https://' + url
             
             response = self.session.get(url, timeout=5, verify=False)
             soup = BeautifulSoup(response.text, 'html.parser')

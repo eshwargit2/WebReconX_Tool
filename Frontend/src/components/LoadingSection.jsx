@@ -1,4 +1,4 @@
-import { Loader2, Shield, Search, Globe, Lock, Bug, Database, FileText, FileCheck } from "lucide-react"
+import { Loader2, Shield, Search, Globe, Lock, Bug, Database, FileText, FileCheck, FolderOpen } from "lucide-react"
 
 export default function LoadingSection({ isLoading, currentOperation = "Initializing scan...", progress = 0, selectedTests = null }) {
   if (!isLoading) return null
@@ -11,6 +11,7 @@ export default function LoadingSection({ isLoading, currentOperation = "Initiali
     { icon: Lock, label: "Detecting technologies", id: 'tech', weight: 12, testKey: 'tech' },
     { icon: Bug, label: "Testing XSS vulnerabilities", id: 'xss', weight: 15, testKey: 'xss' },
     { icon: Database, label: "Testing SQL injection", id: 'sqli', weight: 12, testKey: 'sqli' },
+    { icon: FolderOpen, label: "Scanning hidden directories", id: 'directory', weight: 10, testKey: 'directory' },
     { icon: Shield, label: "Generating AI security report", id: 'ai', weight: 13, testKey: 'ai_analysis', isAI: true },
   ]
 
