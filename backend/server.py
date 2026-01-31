@@ -7,6 +7,7 @@ import socket
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+from flask import send_file
 
 # Load environment variables from .env file (override existing values)
 load_dotenv(override=True)
@@ -434,6 +435,64 @@ def scan_sql_injection():
             'message': str(e)
         }), 500
 
+
+@app.route('/api/generate-pdf', methods=['POST'])
+def generate_pdf_endpoint():
+    """Generate PDF report from analysis data"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'status': 'error',
+                'message': 'No data provided'
+            }), 400
+        
+        analysis_data = data.get('analysisData', {})
+        selected_tests = data.get('selectedTests', {})
+        
+        if not analysis_data:
+            return jsonify({
+                'status': 'error',
+                'message': 'No analysis data provided'
+            }), 400
+        
+        # Import PDF generator
+        from pdf_generator import generate_pdf_report
+        
+        # Generate PDF
+        pdf_path = generate_pdf_report(analysis_data, selected_tests)
+        
+        # Generate filename
+        url = analysis_data.get('url', 'report').replace('://', '-').replace('/', '-').replace('.', '-')
+        filename = f'security-report-{url}-{datetime.now().strftime("%Y%m%d-%H%M%S")}.pdf'
+        
+        # Send file and cleanup
+        response = send_file(
+            pdf_path,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+        
+        # Schedule cleanup after sending
+        @response.call_on_close
+        def cleanup():
+            try:
+                os.unlink(pdf_path)
+            except:
+                pass
+        
+        return response
+        
+    except Exception as e:
+        print(f"Error generating PDF: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to generate PDF: {str(e)}'
+        }), 500
 
 
 if __name__ == '__main__':

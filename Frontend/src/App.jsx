@@ -14,6 +14,7 @@ import DirectoryScan from "./components/DirectoryScan"
 import Documentation from "./components/Documentation"
 import About from "./components/About"
 import SecurityHeaders from "./components/SecurityHeaders"
+import ReportDownload from "./components/ReportDownload"
 
 import { analyzeWebsite, scanXSSVulnerability, scanSQLInjection } from "./services/api"
 
@@ -198,6 +199,15 @@ function App() {
                 )}
               </div>
             )}
+            
+            {/* Report Download Section */}
+            <div id="report-download" className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-8">
+              <h2 className="text-2xl font-bold text-white mb-4 text-center flex items-center justify-center gap-2">
+                <span className="text-purple-400">📥</span>
+                Export Report
+              </h2>
+              <ReportDownload analysisData={analysisData} selectedTests={selectedTests} />
+            </div>
           </>
         )}
         </div>

@@ -1,4 +1,4 @@
-import { Shield, User, Key, X, Check, Menu, Home, FileText, Settings, Info, BookOpen, Globe, Layers, TrendingUp, Lightbulb, Bug, ChevronRight } from "lucide-react"
+import { Shield, User, Key, X, Check, Menu, Home, FileText, Settings, Info, BookOpen, Globe, Layers, TrendingUp, Lightbulb, Bug, ChevronRight, Download } from "lucide-react"
 import { useState } from "react"
 
 export default function Header({ onSidebarToggle }) {
@@ -53,6 +53,10 @@ export default function Header({ onSidebarToggle }) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
     setMobileMenuOpen(false)
+    setSidebarOpen(false)
+    if (onSidebarToggle) {
+      onSidebarToggle(false)
+    }
   }
 
   return (
@@ -116,6 +120,14 @@ export default function Header({ onSidebarToggle }) {
               <FileText size={20} className="group-hover:scale-110 transition-transform" />
               <span className="font-medium">Report History</span>
             </a>
+            
+            <button
+              onClick={() => scrollToSection('#report-download')}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 transition group text-left"
+            >
+              <Download size={20} className="group-hover:scale-110 transition-transform" />
+              <span className="font-medium">Download Report</span>
+            </button>
            
           </div>
 
