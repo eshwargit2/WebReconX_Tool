@@ -214,28 +214,87 @@ def generate_vulnerabilities_section(data, selected_tests):
 def generate_recommendations_section(data):
     """Generate AI recommendations section"""
     ai = data.get('ai_analysis', {})
-    recs = ai.get('recommendations', [])
+    vulnerabilities = ai.get('vulnerabilities', [])
+    recs = ai.get('security_recommendations', [])
     
-    if not recs:
-        return ''
+    # Start section
+    section_html = '<div class="section"><h2>💡 AI Security Recommendations</h2>'
     
-    recs_html = ''
-    for idx, rec in enumerate(recs, 1):
-        title = safe_get(rec, 'title') or safe_get(rec, 'recommendation')
-        desc = safe_get(rec, 'description') or safe_get(rec, 'details')
-        priority = safe_get(rec, 'priority')
+    if not vulnerabilities and not recs:
+        # Check if it's a quota error
+        is_quota_error = ai.get('error') == 'quota_exceeded'
         
-        badge_class = 'badge-danger' if priority.lower() in ['high', 'critical'] else 'badge-warning' if priority.lower() == 'medium' else 'badge-info'
+        if is_quota_error:
+            section_html += """
+            <div style="text-align: center; padding: 20px; background: #fff7ed; border: 2px solid #fed7aa; margin: 10px 0;">
+                <div style="font-size: 36pt; margin-bottom: 10px;">⚠️</div>
+                <h3 style="color: #9a3412; margin: 0 0 8px 0; font-size: 11pt;">AI Analysis Quota Exceeded</h3>
+                <p style="color: #7c2d12; margin: 0 0 8px 0; font-size: 8pt;">
+                    Gemini API free tier limit reached (20 requests/day).
+                </p>
+                <p style="color: #78350f; margin: 0; font-size: 7pt; line-height: 1.4;">
+                    The scan completed successfully but detailed AI insights are unavailable. 
+                    Your quota will reset in 24 hours, or you can upgrade your plan for higher limits.
+                </p>
+            </div>
+            """
+        else:
+            section_html += """
+            <div style="text-align: center; padding: 20px; background: #f0fdf4; border: 2px solid #86efac; margin: 10px 0;">
+                <div style="font-size: 36pt; margin-bottom: 10px;">✓</div>
+                <h3 style="color: #166534; margin: 0 0 8px 0; font-size: 11pt;">No Major Issues Detected</h3>
+                <p style="color: #15803d; margin: 0; font-size: 8pt;">
+                    The security scan completed successfully. Enable AI analysis with Gemini API key for detailed recommendations.
+                </p>
+            </div>
+            """
         
-        recs_html += f"""
-        <div class="recommendation">
-            <div style="font-weight: 600; color: #1e40af; margin-bottom: 5px;">{idx}. {title}</div>
-            <p style="margin: 5px 0;">{desc}</p>
-            <span class="badge {badge_class}">Priority: {priority}</span>
-        </div>
-        """
+        section_html += '</div>'
+        return section_html
     
-    return f'<div class="section"><h2>💡 AI Security Recommendations</h2>{recs_html}</div>'
+    # Generate vulnerabilities if available
+    if vulnerabilities:
+        section_html += '<h3 style="color: #dc2626; margin: 15px 0 10px 0;">🔴 AI-Identified Vulnerabilities</h3>'
+        for idx, vuln in enumerate(vulnerabilities, 1):
+            title = safe_get(vuln, 'title', default='Vulnerability')
+            description = safe_get(vuln, 'description')
+            severity = safe_get(vuln, 'severity', default='Unknown')
+            attack_method = safe_get(vuln, 'attack_method')
+            impact = safe_get(vuln, 'impact')
+            fix = safe_get(vuln, 'fix')
+            
+            section_html += f"""
+            <div class="vulnerability">
+                <div class="vulnerability-title">{idx}. {title} <span class="badge badge-danger">{severity.upper()}</span></div>
+                {f'<p style="margin: 5px 0; color: #334155;">{description}</p>' if description else ''}
+                {f'<div style="background: #fef2f2; border: 1px solid #fca5a5; padding: 8px; margin: 5px 0;"><strong style="color: #dc2626;">Attack Method:</strong> {attack_method}</div>' if attack_method else ''}
+                {f'<div style="background: #f8fafc; padding: 8px; margin: 5px 0;"><strong style="color: #f97316;">Impact:</strong> {impact}</div>' if impact else ''}
+                {f'<div class="info-box" style="margin: 5px 0;"><strong style="color: #0e7490;">Fix:</strong> {fix}</div>' if fix else ''}
+            </div>
+            """
+    
+    # Generate recommendations if available
+    if recs:
+        section_html += '<h3 style="color: #0f172a; margin: 20px 0 10px 0;">🎯 Security Recommendations</h3>'
+        for idx, rec in enumerate(recs, 1):
+            category = safe_get(rec, 'category', default='General')
+            recommendation = safe_get(rec, 'recommendation') or safe_get(rec, 'title', default='Security Recommendation')
+            implementation = safe_get(rec, 'implementation')
+            priority = safe_get(rec, 'priority', default='Medium')
+            
+            badge_class = 'badge-danger' if priority.lower() in ['high', 'critical'] else 'badge-warning' if priority.lower() == 'medium' else 'badge-info'
+            
+            section_html += f"""
+            <div class="recommendation">
+                <div style="font-size: 7pt; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 3px;">{category}</div>
+                <div style="font-weight: 600; color: #1e40af; margin-bottom: 5px;">{idx}. {recommendation}</div>
+                {f'<div style="background: #f1f5f9; padding: 8px; margin: 5px 0; font-size: 7pt;"><strong style="color: #0ea5e9;">Implementation:</strong> {implementation}</div>' if implementation else ''}
+                <span class="badge {badge_class}">{priority.upper()}</span>
+            </div>
+            """
+    
+    section_html += '</div>'
+    return section_html
 
 def generate_directory_section(data, selected_tests):
     """Generate directory scan section"""
@@ -243,42 +302,113 @@ def generate_directory_section(data, selected_tests):
         return ''
     
     dir_scan = data.get('directory_scan', {})
-    dirs = dir_scan.get('found_directories', [])
-    files = dir_scan.get('found_files', [])
+    total_dirs = dir_scan.get('total_directories', 0)
+    directories = dir_scan.get('directories', [])
+    categories = dir_scan.get('categories', {})
     
-    if not dirs and not files:
+    if total_dirs == 0:
         return ''
     
-    dirs_html = ''
-    if dirs:
-        dirs_html = '<h3>Directories</h3><ul>'
-        for d in dirs[:50]:  # Limit to 50 to avoid huge PDFs
-            path = d.get('path', d) if isinstance(d, dict) else d
-            status = d.get('status_code', '') if isinstance(d, dict) else ''
-            status_html = f' <span class="badge badge-success">{status}</span>' if status else ''
-            dirs_html += f'<li><strong>{path}</strong>{status_html}</li>'
-        dirs_html += '</ul>'
+    # Helper function
+    def get_category_label(category):
+        labels = {
+            'admin': 'Admin & Control',
+            'config': 'Configuration',
+            'backup': 'Backup & Temp',
+            'api': 'API Endpoints',
+            'content': 'Content & Media',
+            'other': 'Other'
+        }
+        return labels.get(category, category)
     
-    files_html = ''
-    if files:
-        files_html = '<h3>Files</h3><ul>'
-        for f in files[:50]:  # Limit to 50
-            path = f.get('path', f) if isinstance(f, dict) else f
-            status = f.get('status_code', '') if isinstance(f, dict) else ''
-            size = f.get('size', '') if isinstance(f, dict) else ''
-            status_html = f' <span class="badge badge-success">{status}</span>' if status else ''
-            size_html = f' ({size})' if size else ''
-            files_html += f'<li><strong>{path}</strong>{status_html}{size_html}</li>'
-        files_html += '</ul>'
+    def format_file_size(size_bytes):
+        if not size_bytes or size_bytes == 0:
+            return 'N/A'
+        if size_bytes < 1024:
+            return f'{size_bytes} B'
+        elif size_bytes < 1024 * 1024:
+            return f'{size_bytes / 1024:.1f} KB'
+        return f'{size_bytes / (1024 * 1024):.1f} MB'
     
-    return f"""
-    <div class="section">
-        <h2>🔍 Directory & Endpoint Discovery</h2>
-        <p><strong>Summary:</strong> Found {len(dirs)} directories and {len(files)} files</p>
-        {dirs_html}
-        {files_html}
-    </div>
-    """
+    def get_category_for_dir(dir_info):
+        for cat, dirs in categories.items():
+            if any(d.get('url') == dir_info.get('url') for d in dirs):
+                return cat
+        return 'other'
+    
+    # Filter for status 200 only
+    status_200_dirs = [d for d in directories if d.get('status_code') in [200, '200']]
+    
+    # Check for critical exposure
+    has_critical = (len(categories.get('admin', [])) > 0) or (len(categories.get('config', [])) > 0)
+    
+    html = '<div class="section">'
+    html += '<h2>🔍 Reconnaissance & Endpoint Discovery</h2>'
+    html += '<h3>Directory Enumeration</h3>'
+    html += f'<p style="font-weight: bold; margin-bottom: 10px;">{total_dirs} accessible {"directory" if total_dirs == 1 else "directories"} found</p>'
+    
+    # Category summary boxes
+    html += '<div style="margin-bottom: 15px;">'
+    html += f'<span class="stat-box" style="background: #3b82f6; color: white; display: inline-block; padding: 5px 10px; margin: 3px; font-size: 7pt; font-weight: bold;">All ({total_dirs})</span>'
+    for category, dirs in categories.items():
+        if len(dirs) > 0:
+            label = get_category_label(category)
+            html += f'<span class="stat-box" style="display: inline-block; padding: 5px 10px; margin: 3px; font-size: 7pt; font-weight: bold; border: 1px solid #64748b;">{ label} ({len(dirs)})</span>'
+    html += '</div>'
+    
+    # Critical warning
+    if has_critical:
+        html += """
+        <div class="warning-box" style="margin-bottom: 15px; background: #fef2f2; border: 2px solid #ef4444; padding: 10px;">
+            <p style="color: #dc2626; font-weight: bold; margin: 0 0 5px 0;">⚠️ Critical Exposure Detected</p>
+            <p style="color: #991b1b; margin: 0; font-size: 8pt;">
+                Sensitive directories (admin/config) are publicly accessible. This may allow unauthorized access.
+            </p>
+        </div>
+        """
+    
+    # Directory table (status 200 only)
+    html += '<h4 style="margin: 15px 0 8px 0;">Accessible Endpoints (Status: 200 OK)</h4>'
+    html += '<table style="width: 100%; margin-bottom: 15px;"><thead><tr>'
+    html += '<th>Path</th><th>Category</th><th>Status</th><th>Size</th>'
+    html += '</tr></thead><tbody>'
+    
+    for dir_info in status_200_dirs:
+        path = dir_info.get('path', '/')
+        category = get_category_for_dir(dir_info)
+        label = get_category_label(category)
+        size = format_file_size(dir_info.get('size', 0))
+        
+        html += f'<tr>'
+        html += f'<td><code style="font-size: 7pt; word-break: break-all; color: #1e40af;">{path}</code></td>'
+        html += f'<td><span class="badge badge-info" style="font-size: 6pt;">{label}</span></td>'
+        html += f'<td><span class="badge badge-success">200 OK</span></td>'
+        html += f'<td style="font-size: 7pt;">{size}</td>'
+        html += f'</tr>'
+    
+    html += '</tbody></table>'
+    
+    # Category summary table
+    html += '<div style="margin-top: 15px; padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0;">'
+    html += '<h4 style="margin: 0 0 10px 0;">Category Summary</h4>'
+    html += '<table style="width: 100%; border: none;"><tr>'
+    
+    count = 0
+    for category, dirs in categories.items():
+        if len(dirs) > 0:
+            label = get_category_label(category)
+            html += f'<td style="text-align: center; padding: 8px; border: 1px solid #cbd5e1;">'
+            html += f'<div style="font-size: 6pt; font-weight: bold; text-transform: uppercase; margin-bottom: 3px;">{label}</div>'
+            html += f'<div style="font-size: 14pt; font-weight: bold;">{len(dirs)}</div>'
+            html += f'</td>'
+            count += 1
+            if count % 3 == 0:
+                html += '</tr><tr>'
+    
+    html += '</tr></table></div>'
+    html += '</div>'
+    
+    return html
 
 def generate_waf_section(data, selected_tests):
     """Generate WAF section"""
@@ -380,15 +510,118 @@ def generate_security_headers_section(data, selected_tests):
     if not headers:
         return ''
     
-    present = headers.get('headers_present', [])
-    missing = headers.get('missing_headers', [])
+    headers_found = headers.get('headers_found', [])
+    headers_missing = headers.get('headers_missing', [])
+    total_score = headers.get('total_score', 0)
+    max_score = headers.get('max_score', 0)
+    grade = headers.get('security_grade', 'F')
+    percentage = round((total_score / max_score) * 100) if max_score > 0 else 0
+    
+    # Grade color
+    if grade == 'A':
+        grade_color = '#059669'
+    elif grade == 'B':
+        grade_color = '#0ea5e9'
+    elif grade == 'C':
+        grade_color = '#eab308'
+    elif grade == 'D':
+        grade_color = '#f97316'
+    else:
+        grade_color = '#dc2626'
+    
+    # Present headers table
+    present_html = ''
+    if headers_found:
+        present_html = f'<h3 style="color: #059669; margin: 20px 0 10px 0;">✅ Security Headers Present ({len(headers_found)})</h3>'
+        present_html += '<table><thead><tr><th>Header</th><th>Source</th><th>Description</th><th>Value</th></tr></thead><tbody>'
+        for header in headers_found:
+            name = header.get('name', '')
+            source = header.get('source', 'HTTP')
+            description = header.get('description', '')
+            value = header.get('value', '')
+            # Truncate long values for PDF
+            display_value = value[:100] + '...' if len(value) > 100 else value
+            present_html += f'''<tr>
+                <td><strong>{name}</strong></td>
+                <td><span class="badge badge-info">{source}</span></td>
+                <td style="color: #64748b; font-size: 8pt;">{description}</td>
+                <td style="font-family: monospace; font-size: 7pt; word-break: break-all;">{display_value}</td>
+            </tr>'''
+        present_html += '</tbody></table>'
+    else:
+        present_html = '<p style="color: #64748b;">No security headers detected</p>'
+    
+    # Missing headers table
+    missing_html = ''
+    if headers_missing:
+        missing_html = f'<h3 style="color: #dc2626; margin: 20px 0 10px 0;">❌ Missing Critical Headers ({len(headers_missing)})</h3>'
+        missing_html += '<table><thead><tr><th>Header</th><th>Risk</th><th>Issue</th><th>Recommendation</th></tr></thead><tbody>'
+        for header in headers_missing:
+            name = header.get('name', '')
+            risk = header.get('risk', 'Low')
+            description = header.get('description', '')
+            recommendation = header.get('recommendation', '')
+            
+            # Risk badge color
+            if risk == 'Critical':
+                risk_class = 'badge-danger'
+            elif risk == 'High':
+                risk_class = 'badge-warning'
+            elif risk == 'Medium':
+                risk_class = 'badge-warning'
+            else:
+                risk_class = 'badge-info'
+            
+            missing_html += f'''<tr>
+                <td><strong>{name}</strong></td>
+                <td><span class="badge {risk_class}">{risk}</span></td>
+                <td style="color: #64748b; font-size: 8pt;">{description}</td>
+                <td style="color: #475569; font-size: 8pt;">💡 {recommendation}</td>
+            </tr>'''
+        missing_html += '</tbody></table>'
+    else:
+        missing_html = '<p style="color: #059669; margin-top: 15px;">✅ All critical security headers are present</p>'
     
     return f"""
     <div class="section">
-        <h2>🛡️ Security Headers</h2>
-        <h3>✅ Present Headers ({len(present)})</h3>
-        <ul>{''.join([f'<li>{h}</li>' for h in present]) if present else '<li>None</li>'}</ul>
-        <h3>❌ Missing Headers ({len(missing)})</h3>
-        <ul>{''.join([f'<li>{h}</li>' for h in missing]) if missing else '<li>None</li>'}</ul>
+        <h2>🛡️ Security Configuration - Headers Analysis</h2>
+        
+        <div style="padding: 12px; background: #f8fafc; border: 2px solid #e2e8f0; margin-bottom: 15px;">
+            <h3 style="margin: 0 0 12px 0; color: #1e293b; text-align: center;">Security Grade: <span style="color: {grade_color}; font-size: 1.4em;">{grade}</span> <span style="color: #64748b; font-size: 0.9em;">({total_score}/{max_score} points • {percentage}%)</span></h3>
+            <div style="text-align: center;">
+                <div class="stat-box" style="background: #f0fdf4; border-color: #10b981;">
+                    <div style="color: #16a34a; font-size: 8pt; font-weight: bold; margin-bottom: 5px;">Present</div>
+                    <div style="color: #15803d; font-size: 20pt; font-weight: bold;">{len(headers_found)}</div>
+                </div>
+                <div class="stat-box" style="background: #fef2f2; border-color: #ef4444;">
+                    <div style="color: #dc2626; font-size: 8pt; font-weight: bold; margin-bottom: 5px;">Missing</div>
+                    <div style="color: #b91c1c; font-size: 20pt; font-weight: bold;">{len(headers_missing)}</div>
+                </div>
+                <div class="stat-box" style="background: #eff6ff; border-color: #3b82f6;">
+                    <div style="color: #2563eb; font-size: 8pt; font-weight: bold; margin-bottom: 5px;">Score</div>
+                    <div style="color: #1d4ed8; font-size: 20pt; font-weight: bold;">{percentage}%</div>
+                </div>
+                <div class="stat-box" style="background: {grade_color}15; border-color: {grade_color};">
+                    <div style="color: {grade_color}; font-size: 8pt; font-weight: bold; margin-bottom: 5px;">Grade</div>
+                    <div style="color: {grade_color}; font-size: 20pt; font-weight: bold;">{grade}</div>
+                </div>
+            </div>
+        </div>
+        
+        {present_html}
+        {missing_html}
+        
+        <div class="info-box">
+            <h4 style="color: #1e40af; margin: 0 0 8px 0;">About Security Headers</h4>
+            <p style="color: #1e3a8a; margin: 0 0 8px 0; line-height: 1.5;">
+                Security headers are HTTP response headers that instruct browsers on how to behave when handling your site's content. 
+                Implementing proper security headers helps protect against common web vulnerabilities like XSS, clickjacking, and data injection attacks.
+            </p>
+            <div class="warning-box" style="margin: 0;">
+                <p style="color: #78350f; margin: 0;">
+                    <strong>⚠️ Note:</strong> Some major sites may show missing headers because they use alternative implementations. Always verify results.
+                </p>
+            </div>
+        </div>
     </div>
     """

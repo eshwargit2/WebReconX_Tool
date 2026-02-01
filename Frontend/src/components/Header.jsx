@@ -1,4 +1,4 @@
-import { Shield, User, Key, X, Check, Menu, Home, FileText, Settings, Info, BookOpen, Globe, Layers, TrendingUp, Lightbulb, Bug, ChevronRight, Download } from "lucide-react"
+import { Shield, User, Key, X, Check, Menu, Home, FileText, Settings, Info, BookOpen, Globe, Layers, TrendingUp, Lightbulb, Bug, ChevronRight, Download, FolderOpen } from "lucide-react"
 import { useState } from "react"
 
 export default function Header({ onSidebarToggle }) {
@@ -42,6 +42,7 @@ export default function Header({ onSidebarToggle }) {
     { icon: Globe, label: 'Domain Information', href: '#domain-info' },
     { icon: Globe, label: 'Website Overview', href: '#website-overview' },
     { icon: Layers, label: 'Technology Stack', href: '#tech-stack' },
+    { icon: FolderOpen, label: 'Endpoint Discovery', href: '#endpoint-discovery' },
     { icon: TrendingUp, label: 'Risk Assessment', href: '#risk-assessment' },
     { icon: Lightbulb, label: 'Recommendations', href: '#recommendations' },
     { icon: Bug, label: 'Vulnerabilities', href: '#vulnerabilities' }

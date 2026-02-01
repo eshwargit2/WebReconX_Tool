@@ -32,23 +32,23 @@ def generate_pdf_report(data, selected_tests):
         raise e
 
 def get_pdf_styles():
-    """Return CSS styles for PDF"""
+    """Return CSS styles for PDF - xhtml2pdf compatible"""
     return """
         @page {
             size: A4;
             margin: 15mm;
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
             line-height: 1.6;
             color: #1e293b;
             font-size: 10pt;
+            background: #f8fafc;
         }
         .header {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background: #1e293b;
             color: white;
             padding: 30px;
-            border-radius: 8px;
             margin-bottom: 20px;
             text-align: center;
         }
@@ -60,115 +60,125 @@ def get_pdf_styles():
             background: white;
             padding: 20px;
             margin-bottom: 15px;
-            border-radius: 8px;
             border: 1px solid #e2e8f0;
             page-break-inside: avoid;
         }
         .section h2 {
             color: #0f172a;
-            border-bottom: 2px solid #06b6d4;
+            border-bottom: 3px solid #06b6d4;
             padding-bottom: 8px;
             margin-bottom: 15px;
             font-size: 14pt;
+            font-weight: bold;
         }
         .section h3 {
             color: #475569;
             margin: 15px 0 10px 0;
             font-size: 12pt;
-        }
-        .overview-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        .overview-item {
-            padding: 12px;
-            background: #f1f5f9;
-            border-radius: 6px;
-            border-left: 3px solid #06b6d4;
-        }
-        .overview-item .label {
-            font-size: 8pt;
-            color: #64748b;
-            margin-bottom: 3px;
-        }
-        .overview-item .value {
-            font-size: 10pt;
-            font-weight: 600;
-            color: #1e293b;
-        }
-        .risk-box {
-            padding: 15px;
-            border-radius: 6px;
-            margin: 15px 0;
-            text-align: center;
-        }
-        .risk-critical { background: #fee2e2; border: 2px solid #ef4444; }
-        .risk-high { background: #fed7aa; border: 2px solid #f97316; }
-        .risk-medium { background: #fef3c7; border: 2px solid #eab308; }
-        .risk-low { background: #d1fae5; border: 2px solid #10b981; }
-        .risk-score {
-            font-size: 32pt;
             font-weight: bold;
-            margin: 8px 0;
+        }
+        .section h4 {
+            color: #64748b;
+            margin: 12px 0 8px 0;
+            font-size: 10pt;
+            font-weight: bold;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 10px 0;
-            font-size: 9pt;
+            margin: 10px 0 15px 0;
+            font-size: 8pt;
         }
         th, td {
-            padding: 8px;
+            padding: 8px 6px;
             text-align: left;
-            border-bottom: 1px solid #e2e8f0;
+            border: 1px solid #e2e8f0;
         }
         th {
-            background: #f8fafc;
-            font-weight: 600;
+            background: #f1f5f9;
+            font-weight: bold;
             color: #0f172a;
+        }
+        tr:nth-child(even) {
+            background: #f8fafc;
         }
         .badge {
             display: inline-block;
-            padding: 3px 10px;
-            border-radius: 10px;
-            font-size: 8pt;
-            font-weight: 600;
+            padding: 2px 8px;
+            border: 1px solid;
+            font-size: 7pt;
+            font-weight: bold;
         }
-        .badge-success { background: #d1fae5; color: #065f46; }
-        .badge-danger { background: #fee2e2; color: #991b1b; }
-        .badge-warning { background: #fef3c7; color: #92400e; }
-        .badge-info { background: #dbeafe; color: #1e40af; }
+        .badge-success { 
+            background: #d1fae5; 
+            color: #065f46;
+            border-color: #10b981;
+        }
+        .badge-danger { 
+            background: #fee2e2; 
+            color: #991b1b;
+            border-color: #ef4444;
+        }
+        .badge-warning { 
+            background: #fef3c7; 
+            color: #92400e;
+            border-color: #eab308;
+        }
+        .badge-info { 
+            background: #dbeafe; 
+            color: #1e40af;
+            border-color: #3b82f6;
+        }
+        .stat-box {
+            display: inline-block;
+            width: 22%;
+            padding: 10px;
+            margin: 5px 1%;
+            text-align: center;
+            border: 2px solid;
+            vertical-align: top;
+        }
         .vulnerability {
             padding: 12px;
             margin: 8px 0;
-            border-left: 3px solid #ef4444;
+            border-left: 4px solid #ef4444;
             background: #fef2f2;
-            border-radius: 4px;
             font-size: 9pt;
         }
         .safe {
             padding: 12px;
             background: #f0fdf4;
-            border-left: 3px solid #10b981;
-            border-radius: 4px;
+            border-left: 4px solid #10b981;
             color: #166534;
             font-size: 9pt;
+        }
+        .info-box {
+            padding: 12px;
+            margin: 12px 0;
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            font-size: 8pt;
+        }
+        .warning-box {
+            padding: 12px;
+            margin: 12px 0;
+            background: #fef3c7;
+            border-left: 4px solid #eab308;
+            font-size: 8pt;
         }
         .recommendation {
             padding: 12px;
             margin: 8px 0;
             background: #eff6ff;
-            border-left: 3px solid #3b82f6;
-            border-radius: 4px;
+            border-left: 4px solid #3b82f6;
             font-size: 9pt;
         }
         code {
             background: #f1f5f9;
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-size: 8pt;
+            padding: 2px 4px;
+            font-family: Courier, monospace;
+            font-size: 7pt;
+            word-wrap: break-word;
         }
         ul {
             margin: 8px 0;
@@ -176,6 +186,12 @@ def get_pdf_styles():
         }
         li {
             margin: 4px 0;
+        }
+        p {
+            margin: 8px 0;
+        }
+        strong {
+            font-weight: bold;
         }
     """
 

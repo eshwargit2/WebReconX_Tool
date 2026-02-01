@@ -503,30 +503,79 @@ export default function ReportDownload({ analysisData, selectedTests }) {
     let content = '<div class="section"><h2>💡 AI Security Recommendations</h2>'
     let hasContent = false
     
-    // AI Recommendations
-    if (aiAnalysis.recommendations?.length) {
+    // AI Vulnerabilities
+    if (aiAnalysis.vulnerabilities?.length) {
       hasContent = true
-      content += '<h3 style="color: #0f172a; margin: 15px 0 10px 0;">🎯 Prioritized Security Recommendations</h3>'
-      content += aiAnalysis.recommendations.map((rec, idx) => {
-        const title = rec.title || rec.recommendation || rec.action || 'Security Recommendation'
-        const description = rec.description || rec.details || rec.reason || (typeof rec === 'string' ? rec : '')
-        const priority = rec.priority || rec.severity || ''
-        const impact = rec.impact || ''
+      content += '<h3 style="color: #dc2626; margin: 15px 0 10px 0;">🔴 AI-Identified Vulnerabilities</h3>'
+      content += aiAnalysis.vulnerabilities.map((vuln, idx) => {
+        const title = vuln.title || 'Vulnerability'
+        const description = vuln.description || ''
+        const severity = vuln.severity || 'Unknown'
+        const attackMethod = vuln.attack_method || ''
+        const impact = vuln.impact || ''
+        const fix = vuln.fix || ''
+        
+        const severityColor = severity.toLowerCase() === 'critical' ? '#dc2626' : 
+                              severity.toLowerCase() === 'high' ? '#f97316' : 
+                              severity.toLowerCase() === 'medium' ? '#eab308' : '#3b82f6'
+        
+        return `
+        <div class="vulnerability">
+            <div class="vulnerability-title" style="color: ${severityColor};">
+                ${idx + 1}. ${title}
+                <span class="badge" style="background: ${severityColor}20; color: ${severityColor}; border: 1px solid ${severityColor}; margin-left: 10px;">${severity.toUpperCase()}</span>
+            </div>
+            ${description ? `<p style="margin: 8px 0; color: #334155; line-height: 1.6;">${description}</p>` : ''}
+            ${attackMethod ? `
+                <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 4px; padding: 10px; margin: 8px 0;">
+                    <strong style="color: #dc2626;">Attack Method:</strong>
+                    <p style="margin: 5px 0 0 0; color: #991b1b; font-size: 0.9em;">${attackMethod}</p>
+                </div>
+            ` : ''}
+            ${impact ? `
+                <div style="background: #f8fafc; border-radius: 4px; padding: 10px; margin: 8px 0;">
+                    <strong style="color: #f97316;">Impact:</strong>
+                    <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.9em;">${impact}</p>
+                </div>
+            ` : ''}
+            ${fix ? `
+                <div style="background: #ecfeff; border: 1px solid #67e8f9; border-radius: 4px; padding: 10px; margin: 8px 0;">
+                    <strong style="color: #0e7490;">Fix:</strong>
+                    <p style="margin: 5px 0 0 0; color: #164e63; font-size: 0.9em;">${fix}</p>
+                </div>
+            ` : ''}
+        </div>
+      `}).join('')
+    }
+    
+    // AI Recommendations
+    if (aiAnalysis.security_recommendations?.length) {
+      hasContent = true
+      content += '<h3 style="color: #0f172a; margin: 25px 0 10px 0;">🎯 Security Recommendations</h3>'
+      content += aiAnalysis.security_recommendations.map((rec, idx) => {
+        const category = rec.category || 'General'
+        const recommendation = rec.recommendation || rec.title || 'Security Recommendation'
+        const implementation = rec.implementation || ''
+        const priority = rec.priority || ''
+        const priorityColor = priority.toLowerCase() === 'critical' ? '#dc2626' : 
+                              priority.toLowerCase() === 'high' ? '#f97316' : 
+                              priority.toLowerCase() === 'medium' ? '#eab308' : '#3b82f6'
         
         return `
         <div class="recommendation">
-            <div style="font-weight: 600; color: #1e40af; margin-bottom: 5px;">
-                ${idx + 1}. ${title}
+            <div style="margin-bottom: 10px;">
+                <span style="font-size: 0.75em; color: #64748b; text-transform: uppercase; font-weight: 600;">${category}</span>
+                <div style="font-weight: 600; color: #1e293b; margin-top: 3px;">
+                    ${idx + 1}. ${recommendation}
+                </div>
             </div>
-            ${description ? `<p style="margin: 5px 0; color: #334155; line-height: 1.6;">${description}</p>` : ''}
-            <div style="margin-top: 8px;">
-                ${priority ? `<span class="badge ${
-                    priority.toLowerCase() === 'high' || priority.toLowerCase() === 'critical' ? 'badge-danger' : 
-                    priority.toLowerCase() === 'medium' ? 'badge-warning' : 'badge-info'
-                }">Priority: ${priority}</span>` : ''}
-                ${impact ? `<span class="badge badge-info" style="margin-left: 8px;">Impact: ${impact}</span>` : ''}
-                ${rec.effort ? `<span class="badge badge-info" style="margin-left: 8px;">Effort: ${rec.effort}</span>` : ''}
-            </div>
+            ${implementation ? `
+                <div style="background: #f1f5f9; border-radius: 4px; padding: 10px; margin: 8px 0;">
+                    <strong style="color: #0ea5e9;">Implementation:</strong>
+                    <p style="margin: 5px 0 0 0; color: #334155; font-size: 0.9em;">${implementation}</p>
+                </div>
+            ` : ''}
+            ${priority ? `<span class="badge" style="background: ${priorityColor}30; color: ${priorityColor}; border: 1px solid ${priorityColor}; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">${priority}</span>` : ''}
         </div>
       `}).join('')
     }
@@ -597,7 +646,30 @@ export default function ReportDownload({ analysisData, selectedTests }) {
     }
     
     if (!hasContent) {
-      content += '<p style="color: #64748b;">No specific recommendations available at this time.</p>'
+      const isQuotaError = aiAnalysis?.error === 'quota_exceeded'
+      if (isQuotaError) {
+        content += `
+        <div style="text-align: center; padding: 30px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px;">
+          <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+          <h3 style="color: #9a3412; margin: 0 0 10px 0; font-size: 1.1em;">AI Analysis Quota Exceeded</h3>
+          <p style="color: #7c2d12; margin: 0 0 10px 0; font-size: 0.9em;">
+            Gemini API free tier limit reached (20 requests/day).
+          </p>
+          <p style="color: #78350f; margin: 0; font-size: 0.85em;">
+            The scan completed successfully but detailed AI insights are unavailable. 
+            Your quota will reset in 24 hours, or you can upgrade your plan for higher limits.
+          </p>
+        </div>`
+      } else {
+        content += `
+        <div style="text-align: center; padding: 30px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px;">
+          <div style="font-size: 48px; margin-bottom: 15px;">✓</div>
+          <h3 style="color: #166534; margin: 0 0 10px 0; font-size: 1.1em;">No Major Issues Detected</h3>
+          <p style="color: #15803d; margin: 0; font-size: 0.9em;">
+            The security scan completed successfully. Enable AI analysis with Gemini API key for detailed recommendations.
+          </p>
+        </div>`
+      }
     }
     
     content += '</div>'
@@ -608,83 +680,138 @@ export default function ReportDownload({ analysisData, selectedTests }) {
     if (selectedTests?.directory === false || !analysisData?.directory_scan) return ''
     
     const dirScan = analysisData.directory_scan
-    const foundDirs = dirScan.found_directories || []
-    const foundFiles = dirScan.found_files || []
+    const totalDirs = dirScan.total_directories || 0
+    const directories = dirScan.directories || []
+    const categories = dirScan.categories || {}
     
-    if (foundDirs.length === 0 && foundFiles.length === 0) return ''
+    if (totalDirs === 0) return ''
+    
+    // Helper functions
+    const getCategoryLabel = (category) => {
+      const labels = {
+        admin: 'Admin & Control',
+        config: 'Configuration',
+        backup: 'Backup & Temp',
+        api: 'API Endpoints',
+        content: 'Content & Media',
+        other: 'Other'
+      }
+      return labels[category] || category
+    }
+    
+    const formatFileSize = (bytes) => {
+      if (!bytes || bytes === 0) return 'N/A'
+      if (bytes < 1024) return `${bytes} B`
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    }
+    
+    const getCategoryColor = (category) => {
+      const colors = {
+        admin: '#dc2626',
+        config: '#f97316',
+        backup: '#eab308',
+        api: '#3b82f6',
+        content: '#a855f7',
+        other: '#64748b'
+      }
+      return colors[category] || colors.other
+    }
+    
+    // Only show directories with status 200
+    const status200Dirs = directories.filter(dir => dir.status_code === 200 || dir.status_code === '200')
+    
+    // Check for critical exposure
+    const hasCriticalExposure = (categories.admin && categories.admin.length > 0) || 
+                                (categories.config && categories.config.length > 0)
     
     return `
     <div class="section">
-        <h2>🔍 Directory & Endpoint Discovery</h2>
-        <p style="color: #64748b; margin-bottom: 20px;">
-            Scanned: ${dirScan.total_scanned || 0} paths | 
-            Found: ${foundDirs.length + foundFiles.length} accessible endpoints
+        <h2>🔍 Reconnaissance & Endpoint Discovery</h2>
+        <h3 style="color: #475569; margin: 15px 0 10px 0;">Directory Enumeration</h3>
+        <p style="color: #0f172a; font-weight: 600; margin-bottom: 15px;">
+            ${totalDirs} accessible ${totalDirs === 1 ? 'directory' : 'directories'} found
         </p>
         
-        ${foundDirs.length > 0 ? `
-        <h3 style="color: #475569; margin: 20px 0 10px 0;">📁 Discovered Directories (${foundDirs.length})</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Path</th>
-                    <th>Status</th>
-                    <th>Size</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${foundDirs.map(dir => `
-                    <tr>
-                        <td><code style="background: #f1f5f9; padding: 2px 6px; border-radius: 3px; font-size: 0.9em;">${dir.path || dir}</code></td>
-                        <td><span class="badge ${
-                            (dir.status === 200 || dir.status === '200') ? 'badge-success' : 
-                            (dir.status === 403 || dir.status === '403') ? 'badge-warning' : 
-                            'badge-info'
-                        }">${dir.status || 'Found'}</span></td>
-                        <td>${dir.size || 'N/A'}</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>
+        <!-- Category Filter Summary -->
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; padding: 15px; background: #f8fafc; border-radius: 6px;">
+            <span style="padding: 6px 12px; background: #3b82f6; color: white; border-radius: 4px; font-size: 0.85em; font-weight: 600;">
+                All (${totalDirs})
+            </span>
+            ${Object.entries(categories).map(([category, dirs]) => {
+              if (dirs.length === 0) return ''
+              const color = getCategoryColor(category)
+              return `
+              <span style="padding: 6px 12px; background: ${color}20; color: ${color}; border: 1px solid ${color}; border-radius: 4px; font-size: 0.85em; font-weight: 600;">
+                  ${getCategoryLabel(category)} (${dirs.length})
+              </span>
+              `
+            }).join('')}
+        </div>
+        
+        ${hasCriticalExposure ? `
+        <!-- Critical Warning -->
+        <div style="background: #fef2f2; border: 2px solid #ef4444; border-radius: 6px; padding: 15px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: start; gap: 10px;">
+                <span style="font-size: 20px;">⚠️</span>
+                <div>
+                    <p style="color: #dc2626; font-weight: 600; margin: 0 0 5px 0;">Critical Exposure Detected</p>
+                    <p style="color: #991b1b; margin: 0; font-size: 0.9em;">
+                        Sensitive directories (admin/config) are publicly accessible. This may allow unauthorized access.
+                    </p>
+                </div>
+            </div>
+        </div>
         ` : ''}
         
-        ${foundFiles.length > 0 ? `
-        <h3 style="color: #475569; margin: 20px 0 10px 0;">📄 Discovered Files (${foundFiles.length})</h3>
+        <!-- Directory List (Status 200 Only) -->
+        <h4 style="color: #475569; margin: 20px 0 10px 0;">Accessible Endpoints (Status: 200 OK)</h4>
         <table>
             <thead>
                 <tr>
                     <th>Path</th>
+                    <th>Category</th>
                     <th>Status</th>
                     <th>Size</th>
                     <th>Type</th>
                 </tr>
             </thead>
             <tbody>
-                ${foundFiles.map(file => `
+                ${status200Dirs.map(dir => {
+                  const category = Object.keys(categories).find(cat => 
+                    categories[cat].some(d => d.url === dir.url)
+                  ) || 'other'
+                  const color = getCategoryColor(category)
+                  
+                  return `
                     <tr>
-                        <td><code style="background: #f1f5f9; padding: 2px 6px; border-radius: 3px; font-size: 0.9em;">${file.path || file}</code></td>
-                        <td><span class="badge ${
-                            (file.status === 200 || file.status === '200') ? 'badge-success' : 
-                            (file.status === 403 || file.status === '403') ? 'badge-warning' : 
-                            'badge-info'
-                        }">${file.status || 'Found'}</span></td>
-                        <td>${file.size || 'N/A'}</td>
-                        <td>${file.type || file.content_type || 'N/A'}</td>
+                        <td><code style="background: #f1f5f9; padding: 4px 8px; border-radius: 3px; font-size: 0.85em; color: #1e40af; word-break: break-all;">${dir.path || '/'}</code></td>
+                        <td><span style="background: ${color}20; color: ${color}; border: 1px solid ${color}; padding: 3px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600;">${getCategoryLabel(category)}</span></td>
+                        <td><span class="badge badge-success">200 OK</span></td>
+                        <td style="color: #475569; font-size: 0.9em;">${formatFileSize(dir.size)}</td>
+                        <td style="color: #64748b; font-size: 0.85em;">${dir.content_type && dir.content_type !== 'discovered' ? dir.content_type : 'N/A'}</td>
                     </tr>
-                `).join('')}
+                  `
+                }).join('')}
             </tbody>
         </table>
-        ` : ''}
         
-        ${dirScan.interesting_findings?.length ? `
-        <div style="margin-top: 20px; padding: 15px; background: #fef3c7; border-left: 4px solid #eab308; border-radius: 4px;">
-            <h4 style="color: #92400e; margin: 0 0 10px 0;">⚠️ Interesting Findings</h4>
-            <ul style="margin: 0; padding-left: 20px;">
-                ${dirScan.interesting_findings.map(finding => 
-                    `<li style="color: #78350f; margin: 5px 0;">${finding}</li>`
-                ).join('')}
-            </ul>
+        <!-- Category Summary -->
+        <div style="margin-top: 25px; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+            <h4 style="color: #475569; margin: 0 0 15px 0;">Category Summary</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                ${Object.entries(categories).map(([category, dirs]) => {
+                  if (dirs.length === 0) return ''
+                  const color = getCategoryColor(category)
+                  return `
+                  <div style="text-align: center; padding: 12px; background: white; border: 1px solid ${color}; border-radius: 4px;">
+                      <div style="color: ${color}; font-size: 0.75em; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">${getCategoryLabel(category)}</div>
+                      <div style="color: #1e293b; font-size: 1.5em; font-weight: bold;">${dirs.length}</div>
+                  </div>
+                  `
+                }).join('')}
+            </div>
         </div>
-        ` : ''}
     </div>`
   }
 
@@ -1165,21 +1292,106 @@ export default function ReportDownload({ analysisData, selectedTests }) {
     if (selectedTests?.security_headers === false || !analysisData?.security_headers) return ''
     
     const headers = analysisData.security_headers
-    const present = headers.headers_present || []
-    const missing = headers.missing_headers || []
+    const headersFound = headers.headers_found || []
+    const headersMissing = headers.headers_missing || []
+    const totalScore = headers.total_score || 0
+    const maxScore = headers.max_score || 0
+    const grade = headers.security_grade || 'F'
+    const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0
+    
+    const gradeColor = grade === 'A' ? '#059669' : grade === 'B' ? '#0ea5e9' : grade === 'C' ? '#eab308' : grade === 'D' ? '#f97316' : '#dc2626'
     
     return `
     <div class="section">
-        <h2>🛡️ Security Headers</h2>
-        <h3 style="color: #059669; margin: 15px 0 10px 0;">✅ Present Headers</h3>
-        <ul>
-            ${present.map(header => `<li><strong>${header}</strong></li>`).join('') || '<li>None</li>'}
-        </ul>
+        <h2>🛡️ Security Configuration - Headers Analysis</h2>
         
-        <h3 style="color: #dc2626; margin: 15px 0 10px 0;">❌ Missing Headers</h3>
-        <ul>
-            ${missing.map(header => `<li><strong>${header}</strong></li>`).join('') || '<li>None</li>'}
-        </ul>
+        <div style="padding: 20px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 8px; margin-bottom: 25px;">
+            <h3 style="margin: 0 0 15px 0; color: #1e293b;">Security Grade: <span style="color: ${gradeColor}; font-size: 1.5em;">${grade}</span> <span style="color: #64748b; font-size: 0.9em;">(${totalScore}/${maxScore} points • ${percentage}%)</span></h3>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+                <div style="text-align: center; padding: 15px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px;">
+                    <div style="color: #16a34a; font-size: 0.75em; font-weight: 600; margin-bottom: 5px;">Present</div>
+                    <div style="color: #15803d; font-size: 2em; font-weight: bold;">${headersFound.length}</div>
+                </div>
+                <div style="text-align: center; padding: 15px; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px;">
+                    <div style="color: #dc2626; font-size: 0.75em; font-weight: 600; margin-bottom: 5px;">Missing</div>
+                    <div style="color: #b91c1c; font-size: 2em; font-weight: bold;">${headersMissing.length}</div>
+                </div>
+                <div style="text-align: center; padding: 15px; background: #eff6ff; border: 1px solid #93c5fd; border-radius: 6px;">
+                    <div style="color: #2563eb; font-size: 0.75em; font-weight: 600; margin-bottom: 5px;">Score</div>
+                    <div style="color: #1d4ed8; font-size: 2em; font-weight: bold;">${percentage}%</div>
+                </div>
+                <div style="text-align: center; padding: 15px; background: ${gradeColor}15; border: 1px solid ${gradeColor}50; border-radius: 6px;">
+                    <div style="color: ${gradeColor}; font-size: 0.75em; font-weight: 600; margin-bottom: 5px;">Grade</div>
+                    <div style="color: ${gradeColor}; font-size: 2em; font-weight: bold;">${grade}</div>
+                </div>
+            </div>
+        </div>
+        
+        ${headersFound.length > 0 ? `
+        <h3 style="color: #059669; margin: 20px 0 15px 0;">✅ Security Headers Present (${headersFound.length})</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Header Name</th>
+                    <th>Source</th>
+                    <th>Description</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${headersFound.map(header => `
+                    <tr>
+                        <td><strong>${header.name}</strong></td>
+                        <td><span class="badge badge-info">${header.source || 'HTTP'}</span></td>
+                        <td style="color: #64748b; font-size: 0.9em;">${header.description || ''}</td>
+                        <td><code style="background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; word-break: break-all; display: block; max-width: 400px;">${header.value || ''}</code></td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+        ` : '<p style="color: #64748b;">No security headers detected</p>'}
+        
+        ${headersMissing.length > 0 ? `
+        <h3 style="color: #dc2626; margin: 25px 0 15px 0;">❌ Missing Critical Headers (${headersMissing.length})</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Header Name</th>
+                    <th>Risk Level</th>
+                    <th>Issue</th>
+                    <th>Recommendation</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${headersMissing.map(header => {
+                    const riskColor = header.risk === 'Critical' ? '#dc2626' : header.risk === 'High' ? '#f97316' : header.risk === 'Medium' ? '#eab308' : '#0ea5e9'
+                    return `
+                    <tr>
+                        <td><strong>${header.name}</strong></td>
+                        <td><span class="badge" style="background: ${riskColor}20; color: ${riskColor}; border: 1px solid ${riskColor};">${header.risk} Risk</span></td>
+                        <td style="color: #64748b; font-size: 0.9em;">${header.description || ''}</td>
+                        <td style="color: #475569; font-size: 0.85em;">💡 ${header.recommendation || ''}</td>
+                    </tr>
+                    `
+                }).join('')}
+            </tbody>
+        </table>
+        ` : '<p style="color: #059669; margin-top: 15px;">✅ All critical security headers are present</p>'}
+        
+        <div style="margin-top: 25px; padding: 15px; background: #dbeafe; border-left: 4px solid #3b82f6; border-radius: 4px;">
+            <h4 style="color: #1e40af; margin: 0 0 10px 0;">About Security Headers</h4>
+            <p style="color: #1e3a8a; margin: 0; font-size: 0.9em; line-height: 1.6;">
+                Security headers are HTTP response headers that instruct browsers on how to behave when handling your site's content. 
+                Implementing proper security headers helps protect against common web vulnerabilities like XSS, clickjacking, and data injection attacks.
+            </p>
+            <div style="margin-top: 10px; padding: 10px; background: #fef3c7; border-left: 3px solid #eab308; border-radius: 3px;">
+                <p style="color: #78350f; margin: 0; font-size: 0.85em;">
+                    <strong>⚠️ Note:</strong> Some major sites may show missing headers because they use alternative implementations, 
+                    different headers for specific services, or have other security measures in place. Always verify results and consider the 
+                    overall security posture, not just individual headers.
+                </p>
+            </div>
+        </div>
     </div>`
   }
 
