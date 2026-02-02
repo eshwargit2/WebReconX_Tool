@@ -1,11 +1,13 @@
 # WebReconX
 ![License](https://img.shields.io/github/license/eshwargit2/WebReconX_Tool)  <br>
-A comprehensive web security analysis tool that performs automated reconnaissance and vulnerability scanning on websites. WebReconX provides real-time insights into web technologies, security configurations, and potential vulnerabilities with AI-powered security recommendations and selective test execution for optimized scanning.
+A comprehensive web security analysis tool that performs automated reconnaissance and vulnerability scanning on websites. WebReconX provides real-time insights into web technologies, security configurations, and potential vulnerabilities with AI-powered security recommendations, selective test execution, and professional HTML/PDF report generation.
 
 ## 🚀 Features
 
+### Core Security Testing
 - **AI-Powered Security Analysis**: Uses Google Gemini AI to generate contextual security recommendations based on detected vulnerabilities, open ports with versions, technology stack, and security headers configuration
-- **Selective Test Execution**: Interactive modal allows you to choose which security tests to run (XSS, SQL Injection, Port Scanning, WAF Detection, Technology Detection, Security Headers Analysis, WHOIS Lookup, AI Analysis)
+- **Selective Test Execution**: Interactive modal allows you to choose which security tests to run (XSS, SQL Injection, Port Scanning, Directory Enumeration, WAF Detection, Technology Detection, Security Headers Analysis, WHOIS Lookup, AI Analysis)
+- **Directory Enumeration**: Katana-style intelligent crawling combined with traditional directory brute-force scanning. Categorizes findings into Admin & Control, API Endpoints, Configuration, Backup & Temp, Content & Media with critical exposure warnings
 - **Security Headers Analysis**: Comprehensive HTTP security headers scanner checking 8 critical headers (CSP, HSTS, X-Frame-Options, etc.) with A-F grading system, risk assessment, and remediation recommendations
 - **SQL Injection Scanning**: Advanced testing with 13 optimized payloads detecting Error-based, Boolean-based, Union-based, and Time-based SQL injection vulnerabilities
 - **XSS Vulnerability Scanning**: Tests for Cross-Site Scripting vulnerabilities using optimized payloads across forms and URL parameters
@@ -13,9 +15,20 @@ A comprehensive web security analysis tool that performs automated reconnaissanc
 - **Web Application Firewall (WAF) Detection**: Detects 15+ WAF types including AWS WAF, Cloudflare, Akamai, Imperva, and more with confidence levels
 - **Port Scanning**: Multi-threaded scanning of common ports (21, 22, 80, 443, 3306, etc.) with service version detection
 - **WHOIS Lookup**: Retrieves domain registration information including registrar, creation date, expiration date, and nameservers
+
+### Report Generation
+- **HTML Report Export**: Beautiful, comprehensive HTML reports with inline CSS styling, color-coded badges, detailed tables, and category summaries
+- **PDF Report Export**: Professional PDF reports generated server-side using xhtml2pdf with optimized styling for print and digital viewing
+- **Report Download Section**: Dedicated UI section with both HTML and PDF download options, showing report preview and file size
+- **Comprehensive Content**: Reports include all scan results - Website Overview, Security Configuration, Directory Enumeration with categories, Technology Stack, Vulnerabilities (XSS/SQLi), WAF Detection, WHOIS Info, Port Scanning, AI Security Recommendations with vulnerability details
+- **Sidebar Navigation**: Quick access to Download Report section via sidebar menu
+
+### User Interface
 - **Smart Loading Animation**: Dynamic progress indicator showing only the selected tests being executed, including AI analysis progress
 - **Real-time Progress Tracking**: Live updates showing which security operation is currently executing
 - **Comprehensive Dashboard**: Visual representation of scan results with color-coded risk indicators and conditional rendering based on selected tests
+- **Responsive Design**: Modern UI built with Tailwind CSS, fully responsive across desktop and mobile devices
+- **Interactive Components**: Expandable sections, category filters, copy-to-clipboard functionality, and external link navigation
 
 ## 🛠️ Tech Stack
 
@@ -24,11 +37,12 @@ A comprehensive web security analysis tool that performs automated reconnaissanc
 - **Flask-CORS** 6.0.2 for cross-origin requests
 - **Requests** 2.31.0 for HTTP operations
 - **BeautifulSoup4** 4.12.3 for HTML parsing
+- **xhtml2pdf** for server-side PDF generation
 - **wafw00f** for WAF detection
 - **python-whois** for domain registration lookups 
 - **python-dotenv** for environment variable management
 - **Google Generative AI (Gemini)** for AI-powered security analysis
-- **Modular Architecture**: Separate modules for port scanning, WAF detection, technology detection, XSS scanning, SQL injection scanning, WHOIS lookup, and AI analysis
+- **Modular Architecture**: Separate modules for port scanning, WAF detection, technology detection, XSS scanning, SQL injection scanning, directory enumeration, security headers analysis, WHOIS lookup, PDF generation, and AI analysis
 
 ### Frontend
 - **React 18** with Vite build tool
@@ -120,8 +134,7 @@ The frontend will start on `http://localhost:5173` (or another available port)
 4. **Select Your Tests**: A modal will appear allowing you to choose which security tests to run:
    - ✅ **Port Scanning** - Scan for open ports and services
    - ✅ **WAF Detection** - Check for Web Application Firewall
-   - ✅ **Technology Detection** - Identify web technologies and frameworks
-   - ✅ **XSS Vulnerability Test** - Test for Cross-Site Scripting attacks
+   - ✅ **Technology Detection** - Identify web technologies and frameworks   - ✅ **Directory Enumeration** - Discover accessible endpoints and directories (Admin panels, API endpoints, Config files, etc.)   - ✅ **XSS Vulnerability Test** - Test for Cross-Site Scripting attacks
    - ✅ **SQL Injection Test** - Test for SQL injection vulnerabilities (REQUIRES URL with parameters!)
    - ✅ **Security Headers Analysis** - Analyze HTTP security headers configuration (CSP, HSTS, X-Frame-Options, etc.) with A-F grading
    - ✅ **WHOIS Lookup** - Get domain registration information
@@ -136,6 +149,7 @@ The frontend will start on `http://localhost:5173` (or another available port)
    - Port scanning (if selected)
    - WAF detection (if selected)
    - Technology stack identification (if selected)
+   - Directory enumeration with intelligent crawling (if selected)
    - XSS vulnerability testing (if selected)
    - SQL injection testing (if selected) - scans URL parameters for vulnerabilities
    - Security headers analysis (if selected) - checks 8 critical HTTP security headers
@@ -146,11 +160,17 @@ The frontend will start on `http://localhost:5173` (or another available port)
    - Website overview (IP, hostname, open ports if scanned)
    - WAF protection status (if scanned)
    - Detected technologies by category (if scanned)
+   - Directory enumeration with category filters (Admin & Control, API Endpoints, Configuration, Backup & Temp, Content & Media, Other) showing accessible endpoints with status 200 only
    - XSS vulnerability status with attack details (if scanned)
    - SQL injection vulnerability status with detailed payload evidence (if scanned)
-   - Security headers configuration with A-F grade (if scanned)
+   - Security headers configuration with A-F grade, detailed present/missing headers tables (if scanned)
    - WHOIS information (if scanned)
-   - AI-generated risk assessment and recommendations (if AI analysis selected)
+   - AI-generated risk assessment with vulnerabilities and recommendations (if AI analysis selected)
+
+8. Download comprehensive reports:
+   - Navigate to "Download Report" section via sidebar or scroll down
+   - Download **HTML Report** - Beautiful, self-contained report with all scan results
+   - Download **PDF Report** - Professional PDF format for sharing and archival
 
 ## 🔌 API Endpoints
 
@@ -168,6 +188,7 @@ Performs comprehensive security analysis on a target URL with optional selective
     "ports": true,
     "waf": true,
     "tech": true,
+    "directory": true,
     "security_headers": true,
     "whois": true,
     "ai_analysis": true
@@ -215,6 +236,28 @@ Performs comprehensive security analysis on a target URL with optional selective
     "total_vulnerabilities": 2,
     "vulnerabilities": [...]
   },
+  "directory_scan": {
+    "total_directories": 23,
+    "directories": [
+      {
+        "path": "/admin",
+        "url": "https://example.com/admin",
+        "status_code": 200,
+        "size": 5120,
+        "content_type": "text/html",
+        "source": "brute-force"
+      }
+    ],
+    "categories": {
+      "admin": [],
+      "config": [],
+      "backup": [],
+      "api": [],
+      "content": [],
+      "other": []
+    },
+    "katana_discovered": 15
+  },
   "security_headers": {
     "security_grade": "B",
     "total_score": 70,
@@ -243,11 +286,51 @@ Performs comprehensive security analysis on a target URL with optional selective
   },
   "ai_analysis": {
     "risk_level": "HIGH",
-    "vulnerabilities": [...],
-    "recommendations": [...]
+    "vulnerabilities": [
+      {
+        "title": "SQL Injection Vulnerability",
+        "severity": "Critical",
+        "description": "Application vulnerable to SQL injection attacks",
+        "attack_method": "Parameter manipulation",
+        "impact": "Database compromise, data theft",
+        "fix": "Use parameterized queries"
+      }
+    ],
+    "security_recommendations": [
+      {
+        "category": "Input Validation",
+        "recommendation": "Implement strict input validation",
+        "implementation": "Use whitelist validation for all user inputs",
+        "priority": "High"
+      }
+    ],
+    "compliance_notes": "OWASP Top 10 violations detected"
   }
 }
 ```
+
+### POST /api/generate-pdf
+
+Generates a PDF report from analysis data.
+
+**Request Body:**
+```json
+{
+  "analysisData": {
+    "url": "https://example.com",
+    "...": "all scan results"
+  },
+  "selectedTests": {
+    "xss": true,
+    "sqli": true,
+    "directory": true,
+    "...": "test selections"
+  }
+}
+```
+
+**Response:**
+Binary PDF file with `Content-Type: application/pdf`
 
 ### POST /api/scan-sqli
 
@@ -290,10 +373,14 @@ Performs SQL injection vulnerability scan on a target URL.
 │   ├── portscanner.py         # Port scanning module with multi-threading
 │   ├── waf_detector.py        # WAF detection using wafw00f
 │   ├── tech_detector.py       # Technology fingerprinting module
+│   ├── directory_scanner.py   # Directory enumeration with Katana-style crawling
+│   ├── security_headers.py    # Security headers analysis with A-F grading
 │   ├── xss_scanner.py         # XSS vulnerability scanner
 │   ├── sqli_scanner.py        # SQL injection vulnerability scanner
 │   ├── whois_lookup.py        # WHOIS domain information retrieval
 │   ├── ai_analyzer.py         # AI-powered security analysis using Gemini
+│   ├── pdf_generator.py       # Server-side PDF generation
+│   ├── pdf_helpers.py         # PDF content generation helpers
 │   ├── requirements.txt       # Python dependencies
 │   └── .env                   # Environment variables (API keys)
 │
@@ -302,17 +389,22 @@ Performs SQL injection vulnerability scan on a target URL.
 │   │   ├── App.jsx           # Main application component
 │   │   ├── components/
 │   │   │   ├── Dashboard.jsx              # Main dashboard layout
-│   │   │   ├── Header.jsx                 # Navigation header
+│   │   │   ├── Header.jsx                 # Navigation header with sidebar
 │   │   │   ├── SearchSection.jsx          # URL input and analyze button
 │   │   │   ├── LoadingSection.jsx         # Dynamic progress display
 │   │   │   ├── ScanOptionsModal.jsx       # Test selection modal
 │   │   │   ├── WebsiteOverview.jsx        # Basic site info display
 │   │   │   ├── WhoisInfo.jsx              # WHOIS information display
 │   │   │   ├── TechnologyStack.jsx        # Detected technologies
+│   │   │   ├── DirectoryScan.jsx          # Directory enumeration results
+│   │   │   ├── SecurityHeaders.jsx        # Security headers analysis
 │   │   │   ├── RiskAssessment.jsx         # Security risk summary
-│   │   │   ├── IssuesRecommendations.jsx  # Security recommendations
+│   │   │   ├── IssuesRecommendations.jsx  # AI security recommendations
 │   │   │   ├── XSSVulnerability.jsx       # XSS scan results
-│   │   │   └── SQLInjection.jsx           # SQL injection scan results
+│   │   │   ├── SQLInjection.jsx           # SQL injection scan results
+│   │   │   ├── ReportDownload.jsx         # HTML/PDF report generation
+│   │   │   ├── About.jsx                  # About section
+│   │   │   └── Documentation.jsx          # Documentation section
 │   │   └── services/
 │   │       └── api.js                     # API client
 │   ├── package.json
@@ -322,6 +414,24 @@ Performs SQL injection vulnerability scan on a target URL.
 ```
 
 ## 🔒 Security Features
+
+### Directory Enumeration
+Two-phase intelligent endpoint discovery:
+- **Phase 1**: Katana-style intelligent crawling following links and JavaScript
+- **Phase 2**: Traditional directory brute-force with 100+ common paths
+- **Categorization**: Auto-categorizes findings into Admin & Control, API Endpoints, Configuration, Backup & Temp, Content & Media
+- **Critical Warnings**: Highlights exposed sensitive directories (admin, config)
+- **Status 200 Filter**: Shows only accessible endpoints
+- **Performance**: Multi-threaded scanning with 30 concurrent workers
+
+### Security Headers Analysis
+Comprehensive HTTP security headers evaluation:
+- **8 Critical Headers**: CSP, HSTS, X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy, Cross-Origin-Embedder-Policy
+- **A-F Grading**: Automated scoring system based on header presence and configuration
+- **Risk Assessment**: Each missing header tagged with Critical/High/Medium/Low risk level
+- **Detailed Recommendations**: Specific implementation guidance for each missing header
+- **Present/Missing Tables**: Clear visualization of security posture
+- **Score Percentage**: Numerical score (e.g., 70/80 points = 87%)
 
 ### Technology Detection
 Identifies 15+ frameworks and technologies including:
@@ -362,14 +472,17 @@ Tests for SQL injection vulnerabilities using:
 
 - **Selective Test Execution**: Run only the security tests you need, saving time and resources
 - **Smart Loading Animation**: Shows progress only for selected tests, including AI analysis phase
-- **Optimized SQL Injection Payloads**: Reduced to 5 most effective payloads for faster scanning
+- **Optimized SQL Injection Payloads**: Reduced to 13 most effective payloads for faster scanning
 - **Multi-threaded Port Scanning**: Parallel execution for faster results
-- **Request Timeouts**: 3s per request to prevent hangs; 180s for AI analysis
+- **Multi-threaded Directory Scanning**: 30 concurrent workers for rapid enumeration
+- **Request Timeouts**: 2-3s per request to prevent hangs; 180s for AI analysis
 - **Conditional Rendering**: Frontend displays only the results of executed tests
 - **Modular Backend**: Tests are skipped entirely when not selected, reducing server load
 - **AI Analysis on Demand**: AI recommendations only generated when enabled, runs after all scans complete
 - **Increased Timeout Handling**: Frontend timeout increased to 300s to accommodate AI analysis
 - **Efficient Token Management**: AI prompt optimized to stay within token limits while providing comprehensive analysis
+- **Server-side PDF Generation**: Offloads PDF creation to backend for better performance and reliability
+- **xhtml2pdf Compatibility**: CSS optimized for xhtml2pdf rendering (no gradients, simplified layouts)
 
 ## 🎯 Use Cases
 
@@ -408,10 +521,14 @@ WebReconX follows a modular architecture for better maintainability and scalabil
 2. **portscanner.py**: Multi-threaded port scanning with banner grabbing
 3. **waf_detector.py**: WAF detection using wafw00f with deep analysis
 4. **tech_detector.py**: Technology stack fingerprinting
-5. **xss_scanner.py**: XSS vulnerability testing with optimized payloads
-6. **sqli_scanner.py**: SQL injection vulnerability testing with 5 basic payloads
-7. **whois_lookup.py**: Domain registration information retrieval
-8. **ai_analyzer.py**: AI-powered security analysis using Google Gemini - generates contextual recommendations based on actual scan results (open ports with versions, detected technologies, XSS/SQLi findings, WAF status)
+5. **directory_scanner.py**: Two-phase endpoint discovery with Katana-style crawling and brute-force scanning, auto-categorization
+6. **security_headers.py**: Security headers analysis with A-F grading, risk assessment, and detailed recommendations
+7. **xss_scanner.py**: XSS vulnerability testing with optimized payloads
+8. **sqli_scanner.py**: SQL injection vulnerability testing with 13 advanced payloads
+9. **whois_lookup.py**: Domain registration information retrieval
+10. **ai_analyzer.py**: AI-powered security analysis using Google Gemini - generates contextual recommendations based on actual scan results (open ports with versions, detected technologies, XSS/SQLi findings, WAF status, directory enumeration, security headers)
+11. **pdf_generator.py**: Server-side PDF generation using xhtml2pdf with optimized styling
+12. **pdf_helpers.py**: HTML content generation for PDF reports with comprehensive sections
 
 Each module is self-contained and can be tested independently, making the codebase easier to maintain and extend.
 
@@ -430,17 +547,21 @@ The AI analyzer uses Google Gemini to provide:
 - ~~SQL injection vulnerability testing~~ ✅ **Completed**
 - ~~AI-powered security recommendations~~ ✅ **Completed**
 - ~~WHOIS domain information lookup~~ ✅ **Completed**
+- ~~Directory enumeration and endpoint discovery~~ ✅ **Completed**
+- ~~Security headers comprehensive analysis~~ ✅ **Completed**
+- ~~Report export (HTML/PDF)~~ ✅ **Completed**
 - Advanced SQL injection techniques (Union-based, Time-based, Boolean-based)
 - SSL/TLS configuration analysis
 - CORS misconfiguration detection
 - Subdomain enumeration
 - DNS record analysis
-- Report export (PDF/JSON)
 - Historical scan comparison
 - Scheduled automated scans
 - API rate limiting and authentication
 - Enhanced AI analysis with custom security policies
 - Multi-language support for AI recommendations
+- Report customization options (select sections to include)
+- Scan result archiving and search
 
 ## 📝 License
 
